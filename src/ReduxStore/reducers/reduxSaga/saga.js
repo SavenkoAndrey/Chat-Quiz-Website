@@ -1,18 +1,21 @@
 import { put, call, takeLatest } from "redux-saga/effects";
-
 import { db } from "../../../DataBase/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { get, ref } from "firebase/database";
 import { fetchUsersFailure, fetchUsersSuccess } from "./userReducer";
 import { FETCH_USER } from "./actions";
 
 function* loadUserData() {
   try {
     const users = [];
-    const fetchUsersRef = yield call(getDocs, collection(db, "Accounts"));
+    const fetchUsersRef = ref(db, "users/");
 
-    fetchUsersRef.forEach((doc) => {
-      users.push({ ...doc.data(), id: doc.id });
+    const snapshot = yield call(get, fetchUsersRef);
+
+    snapshot.forEach((doc) => {
+      users.push({ ...doc.val(), id: doc.key });
     });
+
+    console.log(users);
 
     yield put(fetchUsersSuccess(users));
   } catch (error) {
