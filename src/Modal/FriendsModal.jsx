@@ -1,14 +1,60 @@
+import { ref, update } from "firebase/database";
 import React from "react";
+import { db } from "../DataBase/firebase";
 
-const FriendsModal = ({ visible, friendsData }) => {
+const FriendsModal = ({
+  visible,
+  onClose,
+  friendsData,
+  isOnlineFriends,
+  userId,
+  isActiveFriendsBlock,
+}) => {
+  // start chating fn
+
+  const startChatWithFriend = async (chatId) => {
+    // save the chat with friend to bd
+    const findMessages = friendsData.find((e) => e.id === chatId);
+    const isMessages = findMessages.messages;
+
+    const chatUserRef = ref(db, `users/${userId}/friends/${chatId}/`);
+    if (isMessages === undefined) {
+      try {
+        await update(chatUserRef, { messages: "" });
+      } catch (error) {
+        console.error("Something wrong = ", error);
+      }
+    }
+    onClose();
+    isActiveFriendsBlock(chatId);
+  };
+
   return visible ? (
     <div className="friends-modal-container">
       <div className="friends-modal-content">
         {friendsData.length > 0 ? (
           <>
             {friendsData.map((data) => (
-              <div className="friends-modal-block">
-                <img src={data.friendsIcon} alt="friendIcon" />
+              <div key={data.id} className="friends-modal-block">
+                <div
+                  className="status-online"
+                  style={
+                    isOnlineFriends.some(
+                      (users) => users.userId === data.friendsId
+                    )
+                      ? { width: "42px", height: "40px" }
+                      : { width: "auto", height: "auto" }
+                  }
+                >
+                  <img src={data.friendsIcon} alt="friendIcon" />
+                  {isOnlineFriends.some(
+                    (users) => users.userId === data.friendsId
+                  ) ? (
+                    <div className="online-friends-icon" />
+                  ) : (
+                    ""
+                  )}
+                </div>
                 <h4>{data.friendsName}</h4>
                 <span
                   style={{
@@ -16,6 +62,7 @@ const FriendsModal = ({ visible, friendsData }) => {
                     fontSize: "22px",
                     cursor: "pointer",
                   }}
+                  onClick={() => startChatWithFriend(data.id)}
                   className="material-symbols-outlined"
                 >
                   maps_ugc

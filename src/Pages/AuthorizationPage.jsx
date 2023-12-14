@@ -148,7 +148,7 @@ const AuthorizationPage = () => {
 
     const isLogin = userPassword && mail;
 
-    console.log(isLogin.id);
+    // console.log(isLogin.id);
 
     if (isLogin) {
       checkRemember(isLogin.id);
@@ -283,7 +283,7 @@ const AuthorizationPage = () => {
                 </b>
               </p>
             </div>
-            <button style={{ marginTop: "2vh", width: "100%" }} id="login">
+            <button data-testid="login-button" style={{ marginTop: "2vh", width: "100%" }} name='Login' id="login">
               Login
             </button>
           </Form>

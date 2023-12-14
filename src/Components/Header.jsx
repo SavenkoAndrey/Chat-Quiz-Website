@@ -5,7 +5,7 @@ import sound from "../Sound/sound.mp3";
 import { db } from "../DataBase/firebase";
 import UserSetting from "./UserSetting";
 import { message } from "antd";
-// import NotificationWindowModal from "../Modal/NotificationWindowModal";
+import NotificationWindowModal from "../Modal/NotificationWindowModal";
 
 const Header = ({ getId, userData }) => {
   const [isOpenNotification, setIsOpenNotification] = useState(false);
@@ -23,6 +23,16 @@ const Header = ({ getId, userData }) => {
   const [newUserImage, setNewUserImage] = useState(userData.userIcon);
 
   // Notification
+
+  // new notification
+  const [isNewNotification, setIsNewNotification] = useState(false);
+  const [newNotification, setNewNotification] = useState(null);
+  const [prevNoticeLength, setPrevNoticeLength] = useState(0);
+
+
+  const closeModalWithNewNotification = () => {
+    setIsNewNotification(false);
+  };
 
   useEffect(() => {
     // Notification
@@ -52,7 +62,6 @@ const Header = ({ getId, userData }) => {
         const isLogOutButton = event.target.className === ".logout-button";
         const isIconBlock = event.target.id === "user-icon";
         const isEditNameButton = event.target.id === "edit-name";
-        console.log(isEditNameButton);
 
         if (
           isOutsideUserSetting &&
@@ -75,18 +84,8 @@ const Header = ({ getId, userData }) => {
     window.addEventListener("keydown", handleEsc);
 
     document.addEventListener("click", handleClickOutside);
-    const rollEffectCircle = document.querySelector(".roll-effect-circle");
-
-    const rollEffectListener = () => {
-      setTimeout(() => {
-        soundRef.current.play();
-      }, 200);
-    };
 
     // add listener
-    if (rollEffectCircle) {
-      rollEffectCircle.addEventListener("animationend", rollEffectListener);
-    }
 
     // real time update
 
@@ -99,17 +98,25 @@ const Header = ({ getId, userData }) => {
 
     const handleData = (snapshot) => {
       const invitations = snapshot.val();
-      console.log(invitations);
       if (invitations) {
         const keys = Object.keys(invitations);
         const invitationArray = keys.map((key) => ({
           id: key,
           ...invitations[key],
         }));
-        console.log(invitationArray);
         setInvitation(invitationArray);
+
+        if (invitationArray.length > prevNoticeLength) {
+          const newNotification = invitationArray[invitationArray.length - 1];
+          setNewNotification(newNotification);
+          setIsNewNotification(true);
+        } else if (invitationArray.length < prevNoticeLength) {
+          setIsNewNotification(false);
+        }
+        setPrevNoticeLength(invitationArray.length);
       } else {
         setInvitation([]);
+        setPrevNoticeLength(0);
       }
     };
 
@@ -139,18 +146,13 @@ const Header = ({ getId, userData }) => {
       window.removeEventListener("keydown", handleEsc);
 
       // Deleted listeners
-      if (rollEffectCircle) {
-        rollEffectCircle.removeEventListener(
-          "animationend",
-          rollEffectListener
-        );
-      }
+
       document.removeEventListener("click", handleClickOutside);
       off(invitationRef, "value", handleData);
       off(updateRef, "value", handleUpdateData);
       off(usersRef, "value", handelUpdateImage);
     };
-  }, [getId]);
+  }, [getId, prevNoticeLength]);
 
   const toggleNotifications = () => {
     setIsOpenNotification((prev) => !prev);
@@ -165,6 +167,14 @@ const Header = ({ getId, userData }) => {
       setIsOpenNotification(false);
     }, 2000);
   };
+
+  if (isAcceptNotificationRules) {
+    setTimeout(() => {
+      if (soundRef.current) {
+        soundRef.current.play();
+      }
+    }, 1050);
+  }
 
   // for reject and accept button
 
@@ -184,7 +194,6 @@ const Header = ({ getId, userData }) => {
       await update(requestUpdate, { acceptRequest: false });
     }
 
-    console.log(invitationId, findNotification);
     // // delete the date about invitation
     await remove(invitationReference);
   };
@@ -221,17 +230,18 @@ const Header = ({ getId, userData }) => {
         await set(addFriendsToBd, {
           friendsName: findNotification.username,
           friendsIcon: findNotification.userIcon,
+          friendsId: findNotification.userId,
         });
         await set(addFriendsToBd2, {
           friendsName: userData.username,
           friendsIcon: userData.userIcon,
+          friendsId: userData.id,
         });
       } catch (error) {
         console.error("Something wrong, try later", error);
       }
     }
 
-    console.log(invitationId, findNotification);
     // // delete the date about invitation
     await remove(invitationReference);
   };
@@ -262,7 +272,6 @@ const Header = ({ getId, userData }) => {
           id={getId}
         />
       </div>
-
       <div ref={notificationsRef} className="notification">
         <div className="notification-img">
           <div className="holder">
@@ -315,9 +324,13 @@ const Header = ({ getId, userData }) => {
                           <div className="roll-effect-circle">
                             <div className="roll-effect">
                               <div className="roll"> </div>
-                              <audio ref={soundRef} src={sound} />
                             </div>
                           </div>
+                          <audio
+                            ref={soundRef}
+                            src={sound}
+                            type="notice-rulse-sound.mpeg"
+                          />
                           <label className="checkbox">
                             <input type="checkbox" name="check" />
                             <svg
@@ -413,9 +426,11 @@ const Header = ({ getId, userData }) => {
         ) : (
           ""
         )}
-        {/* <NotificationWindowModal
-          notificationData={invitation}
-        /> */}
+        <NotificationWindowModal
+          newNotification={newNotification}
+          visible={isNewNotification}
+          onClose={closeModalWithNewNotification}
+        />
       </div>
     </header>
   );
