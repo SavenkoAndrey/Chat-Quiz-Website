@@ -1,50 +1,44 @@
-// import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useRef } from "react";
+import notificationSound from "../Sound/notification_sound.mp3";
 
-// const NotificationWindowModal = ({ notificationData }) => {
-//   const [visible, setVisible] = useState(true);
-//   const [newNotification, setNewNotification] = useState([])
+const NotificationWindowModal = ({ newNotification, visible, onClose }) => {
+  const noticeSoundRef = useRef(null);
 
-//   useEffect(() => {
+  useEffect(() => {
+    if (noticeSoundRef.current && visible) {
+      noticeSoundRef.current.play();
+    }
 
+    const timeout = setTimeout(() => {
+      onClose();
 
-//     if(newNotification.length) {
+    }, 5000);
 
-//     }
+    return () => clearTimeout(timeout);
+  }, [onClose, newNotification, visible]);
 
-//     const timeout = setTimeout(() => {
-//       setVisible(false);
-//     }, 5000); // Уведомление исчезнет через 5 секунд
+  return visible ? (
+    <div className="notification-window-container">
+      <audio src={notificationSound} ref={noticeSoundRef} />
+      <div className="notification-window-content">
+        <div className="notification-window-header">
+          <span onClick={onClose}>
+            <b>x</b>
+          </span>
+        </div>
+        <div className="notification-window-context">
+          <img src={newNotification.userIcon} alt="noticIcon" />
+          <div className="notification-window-top-context">
+            <h2>{newNotification.username}</h2>
+            <p>{newNotification.message}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : (
+    ""
+  );
+};
 
-//     return () => clearTimeout(timeout);
-//   }, []);
-
-//   return (
-//     <>
-//       {visible && (
-//         <>
-//           {notificationData.map((notice) => (
-//             <div key={notice.id} className="notification-window-container">
-//               <div className="notification-window-content">
-//                 <div className="notification-window-header">
-//               {/* <h1>New Notification</h1> */}
-//               <span onClick={() => setVisible(false)}><b>x</b></span>
-//             </div>
-//                 <div className="notification-window-context">
-//                   <img src={notice.userIcon} alt="noticIcon" />
-//                   <div className="notification-window-top-context">
-//                     <h2>{notice.username}</h2>
-//                     <p>
-//                       {notice.message}
-//                     </p>
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-//           ))}
-//         </>
-//       )}
-//     </>
-//   );
-// };
-
-// export default NotificationWindowModal;
+export default NotificationWindowModal;
