@@ -1,11 +1,11 @@
-import { CameraOutlined, FormOutlined, UserOutlined } from "@ant-design/icons";
+import { CameraOutlined, UserOutlined } from "@ant-design/icons";
 import { ref, update } from "firebase/database";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../DataBase/firebase";
 import EditIconModal from "../Modal/EditIconModal";
 
-const UserSetting = ({ visible, name, icon, logout, id, roomId }) => {
+const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
   // Styles
   const styles = {
     editNameInput: {
@@ -164,6 +164,9 @@ const UserSetting = ({ visible, name, icon, logout, id, roomId }) => {
           </div>
           <div className="user-room-id">
             <h4>Room ID: {roomId}</h4>
+          </div>
+          <div className="user-room-id">
+            <h4>Privilege: <span style={{color: 'red'}}>{privilege}</span></h4>
           </div>
           <div className="user-id">
             <h4>Your ID: {id}</h4>

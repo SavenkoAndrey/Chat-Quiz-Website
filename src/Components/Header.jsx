@@ -7,7 +7,7 @@ import UserSetting from "./UserSetting";
 import { message } from "antd";
 import NotificationWindowModal from "../Modal/NotificationWindowModal";
 
-const Header = ({ getId, userData }) => {
+const Header = ({ getId, userData, isCreateQuiz }) => {
   const [isOpenNotification, setIsOpenNotification] = useState(false);
   const [isOpenUserSetting, setIsOpenUserSetting] = useState(false);
   const [isAcceptNotificationRules, setIsAcceptNotificationRules] =
@@ -176,6 +176,8 @@ const Header = ({ getId, userData }) => {
     }, 1050);
   }
 
+  console.log(invitation);
+
   // for reject and accept button
 
   const rejectInvitation = async (invitationId) => {
@@ -192,6 +194,8 @@ const Header = ({ getId, userData }) => {
 
     if (findNotification.friendsRequest) {
       await update(requestUpdate, { acceptRequest: false });
+    }else if(findNotification.quizRequest){
+      // await update(requestUpdate, { acceptRequest: false });
     }
 
     // // delete the date about invitation
@@ -223,6 +227,9 @@ const Header = ({ getId, userData }) => {
       db,
       `users/${findNotification.userId}/friends/` + randomKey
     );
+    const acceptQuizInvite = ref(db, `rooms/${findNotification.roomId}/participants/` + randomKey
+    );
+    console.log(findNotification);
 
     if (findNotification.friendsRequest) {
       try {
@@ -240,9 +247,21 @@ const Header = ({ getId, userData }) => {
       } catch (error) {
         console.error("Something wrong, try later", error);
       }
+    }else if(findNotification.quizRequest) {
+      try {
+        // await update(requestUpdate, { acceptRequest: true });
+        await set(acceptQuizInvite, {
+          friendsName: userData.username,
+          friendsIcon: userData.userIcon,
+          friendsId: userData.id,
+        });
+        console.log('sussec');
+      } catch (error) {
+        console.error("Something wrong, try later", error);
+      }
     }
 
-    // // delete the date about invitation
+   // delete the date about invitation
     await remove(invitationReference);
   };
 
@@ -253,7 +272,8 @@ const Header = ({ getId, userData }) => {
         <h1>The room ID: </h1>
       </nav>
       <div className="gradient-header">
-        <h3>Chat quiz</h3>
+        
+        <h3>{!isCreateQuiz ? "Chat quiz" : 'Welcome by Create Quiz'}</h3>
       </div>
       <div className="user-icon-block">
         <div
@@ -270,6 +290,7 @@ const Header = ({ getId, userData }) => {
           name={userData.username}
           icon={userData.userIcon}
           id={getId}
+          privilege={userData.privilege}
         />
       </div>
       <div ref={notificationsRef} className="notification">
