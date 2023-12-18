@@ -26,6 +26,7 @@ const AuthorizationPage = () => {
   // for auth with a google acc
 
   const provider = new GoogleAuthProvider();
+  const invitationCode = Math.floor(Math.random().toString(10).substring(8));
 
   // sign in with Google acc and add to firebase
 
@@ -41,6 +42,9 @@ const AuthorizationPage = () => {
             username: user.displayName,
             email: user.email,
             password: "",
+            notification: { invitation: "", update: "" },
+            invitationCode: invitationCode,
+            privilege: "User",
             userIcon: user.photoURL,
           });
         }
@@ -283,7 +287,12 @@ const AuthorizationPage = () => {
                 </b>
               </p>
             </div>
-            <button data-testid="login-button" style={{ marginTop: "2vh", width: "100%" }} name='Login' id="login">
+            <button
+              data-testid="login-button"
+              style={{ marginTop: "2vh", width: "100%" }}
+              name="Login"
+              id="login"
+            >
               Login
             </button>
           </Form>

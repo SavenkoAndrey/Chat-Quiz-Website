@@ -145,10 +145,9 @@ const Chat = ({ userData, usersData, id }) => {
   }, [activeFriendsBlock]);
 
   // socket io effect fn for initial
-
   useEffect(() => {
     const handleSendMessageButton = async (event) => {
-      if (event.key === "Enter") {
+      if (event.key === "Enter" && activeFriendsBlock) {
         if (message.length > 0 && chatData !== undefined) {
           // socket.emit("send_message", { message, activeFriendsBlock });
           const randomMessageKey =
@@ -627,7 +626,7 @@ const Chat = ({ userData, usersData, id }) => {
               </div>
               {isFoundFriend &&
               isFoundFriend.username !== requests.friendsName ? (
-                <div className="find-friends-container">
+                <div key={isFoundFriend.id} className="find-friends-container">
                   <div className="find-friends-block">
                     <img
                       className="friends-icon"
@@ -1028,11 +1027,12 @@ const Chat = ({ userData, usersData, id }) => {
                   </p>
                 )}
               </div>
-              <div className="message-container-block">
-                <span className="material-symbols-outlined" id="file">
-                  fingerprint
-                </span>
-                {/* <input
+              {activeFriendsBlock && (
+                <div className="message-container-block">
+                  <span className="material-symbols-outlined" id="file">
+                    fingerprint
+                  </span>
+                  {/* <input
                   type="text"
                   placeholder="Type something..."
                   id="message-input"
@@ -1041,23 +1041,24 @@ const Chat = ({ userData, usersData, id }) => {
                   onChange={(e) => setMessage(e.target.value)}
                 /> */}
 
-                {/* <span className="material-symbols-outlined" id="smail">
+                  {/* <span className="material-symbols-outlined" id="smail">
                   cyclone 
                 </span> */}
-                <InputEmoji value={message} onChange={setMessage} />
-                <span
-                  onClick={sendMessage}
-                  className="material-symbols-outlined"
-                  id="send"
-                >
-                  send
-                </span>
-                {!message.length && (
-                  <span className="material-symbols-outlined" id="voice">
-                    keyboard_voice
+                  <InputEmoji value={message} onChange={setMessage} />
+                  <span
+                    onClick={sendMessage}
+                    className="material-symbols-outlined"
+                    id="send"
+                  >
+                    send
                   </span>
-                )}
-              </div>
+                  {!message.length && (
+                    <span className="material-symbols-outlined" id="voice">
+                      keyboard_voice
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

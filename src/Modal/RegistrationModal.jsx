@@ -42,6 +42,7 @@ const RegistrationModal = ({ visible, onCancel }) => {
         password: password,
         notification: { invitation: "", update: "" },
         invitationCode: invitationCode,
+        privilege: 'User',
         userIcon:
           "https://static-00.iconduck.com/assets.00/user-icon-2048x2048-ihoxz4vq.png",
       });

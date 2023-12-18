@@ -492,6 +492,292 @@ label.checkbox [type="checkbox"]
   transform: perspective(1000px) rotateY(0)
   box-shadow: none
 
+// create quiz 
+
+.create-quiz-container
+  width: 100%
+  height: 100vh
+  background: linear-gradient(to bottom right, #5D30BF, #ff6666)
+  transform: translateY(-17px)
+  border-top: 2px solid black
+  .create-quiz-header
+    display: flex
+    width: 98%
+    height: 50px
+    font-size: 20px
+    justify-content: flex-end
+    align-items: center
+    .close-create-quiz-container
+      border-radius: 25%
+      width: 25px
+      height: 25px
+      display: flex
+      justify-content: center
+      align-items: center
+      color: #eae8ea
+      border: 2px solid #fff
+      background: #914081
+      &:hover
+        cursor: pointer
+        background: #eae8ea
+        color: red
+
+  .create-quiz-container-blocks
+    width: 100%
+    height: 100%
+    display: flex
+    .create-quiz-container-left-side
+      padding: 0px 50px 0 50px
+      width: 30%
+      height: 100%
+      border-right: 2px solid white
+
+      .participant-container
+        display: block
+        height: 460px
+        overflow-y: auto
+        border-left: 2px solid white
+        padding: 0 10px 0 20px
+
+        .participant-container-block
+          display: flex
+          height: 20%
+          align-items: center
+          border-bottom: 2px solid #c8ff00
+          margin-top: 10px
+
+          .participant-data
+            display: flex
+            align-items: center
+            justify-content: space-between
+            width: 100%
+            font-size: 20px
+            color: #ffd900
+            font-weight: bold
+            .participant-icon-block
+              img
+                border-radius: 50%
+                width: 80px
+                height: 80px
+                border: 1px solid #480ee9
+
+            .remove-user-block
+              width: 33px
+              height: 33px
+              border-radius: 50%
+              display: flex
+              justify-content: center
+              align-items: center
+              background: #f30000e4
+              &:hover
+                cursor: pointer
+
+    .create-quiz-container-right-side
+      display: flex
+      padding: 0px 50px 0 20px
+      width: 69.6%
+      height: 100%
+      border-right: 2px solid white
+      zoom: 89%
+      .create-quiz-container-block
+        width: 100%
+        display: block
+        .create-quiz-container-header
+          display: flex
+          justify-content: center
+          width: 100%
+        
+          span
+            position: absolute
+            left: 97%
+            font-size: 25px
+          .create-quiz-block-questions
+            width: 100%
+            input
+              width: 100%
+              height: 30px
+              border-radius: 5px
+              border: 0
+              padding-left: 10px
+              &:focus
+                border: 0
+                outline: none
+        .create-quiz-block-parts
+          display: flex
+          width: 100%
+          height: 100%
+          .create-quiz-block-left-part
+            width: 50%
+            height: 100%
+            transform: translateY(3%)
+            .create-quiz-block-left-part-picture
+              width: 100%
+              height: 40%
+              background: #a2a2a261
+              justify-content: center
+              align-items: center
+              &:hover
+                background: #a2a2a2ce
+                border: 2px solid #fff
+              .link-to-picture-block
+                height: 100%
+                display: flex
+                justify-content: center
+                align-items: center
+                color: #c5c5c5a9
+                span
+                  font-size: 110px
+                  cursor: none
+                &:hover
+                  color: #e9e5e5
+            .create-quiz-button
+              width: 100%
+              height: 20%
+              display: flex
+              justify-content: center
+              align-items: center
+              #create-quiz
+                align-items: center
+                appearance: none
+                background-color: #f96ff4
+                border-radius: 4px
+                border-width: 0
+                box-shadow: rgba(45, 35, 66, 0.4) 0 2px 4px,rgba(45, 35, 66, 0.3) 0 7px 13px -3px,#D6D6E7 0 -3px 0 inset
+                box-sizing: border-box
+                color: #36395A
+                cursor: pointer
+                display: inline-flex
+                font-family: "JetBrains Mono",monospace
+                height: 48px
+                justify-content: center
+                line-height: 1
+                list-style: none
+                overflow: hidden
+                padding-left: 16px
+                padding-right: 16px
+                position: relative
+                text-align: left
+                text-decoration: none
+                transition: box-shadow .15s,transform .15s
+                user-select: none
+                -webkit-user-select: none
+                touch-action: manipulation
+                white-space: nowrap
+                will-change: box-shadow,transform
+                font-size: 18px
+
+                &:focus
+                  box-shadow: #9696a4 0 0 0 1.5px inset, rgba(45, 35, 66, 0.4) 0 2px 4px, rgba(45, 35, 66, 0.3) 0 7px 13px -3px, #D6D6E7 0 -3px 0 inset
+
+                &:hover
+                  box-shadow: rgba(45, 35, 66, 0.4) 0 4px 8px, rgba(45, 35, 66, 0.3) 0 7px 13px -3px, #D6D6E7 0 -3px 0 inset
+                  transform: translateY(-2px)
+
+                &:active
+                  box-shadow: #D6D6E7 0 3px 7px inset
+                  transform: translateY(2px)
+
+          .create-quiz-block-right-part
+            width: 50%
+            height: 100%
+            display: block
+            transform: translateX(6%)
+            .create-quiz-block-right-part-answers
+              border-bottom: 2px solid white
+              padding: 2rem 0 2rem 0
+              line-height: 30px
+              width: 100%
+              line-height: 40px
+
+              #answer
+                transform: translateY(2px)
+                width: 10%
+                height: 15px
+                &:hover
+                  cursor: pointer
+              #answer-input
+                font-size: 18px
+                height: 30px
+                // margin-left: 20px
+                width: 80%
+                padding-left: 5px
+                border: none
+                &:focus
+                  outline: none
+                  border: 1px solid #5D30BF
+              .add-answer-btn
+                display: flex
+                align-items: center
+                width: 30%
+                height: 40px
+                border-radius: 5px
+                border: 2px solid #5D30BF
+                padding: 10px
+                transform: translateY(15px)
+                // border-top: 2px solid #5D30BF
+                // border-bottom: 2px solid #5D30BF
+                &:hover
+                  cursor: pointer
+            .create-quiz-block-right-part-right-answer
+              display: flex
+              align-items: center
+              width: 100%
+              height: 8.5%
+              border-bottom: 2px solid white
+              font-size: 25px
+            .create-quiz-block-right-part-buttons
+              transform: translateY(10px)
+              .create-quiz-block-right-part-button-back
+                background-color: #5D30BF
+                border: 1px solid #9179c5
+                border-radius: 4px
+                box-shadow: rgba(0, 0, 0, .1) 0 2px 4px 0
+                box-sizing: border-box
+                color: #fff
+                cursor: pointer
+                font-family: "Akzidenz Grotesk BQ Medium", -apple-system, BlinkMacSystemFont, sans-serif
+                font-size: 16px
+                font-weight: 400
+                outline: none
+                outline: 0
+                padding: 10px 25px
+                text-align: center
+                transform: translateY(0)
+                transition: transform 150ms, box-shadow 150ms
+                user-select: none
+                -webkit-user-select: none
+                touch-action: manipulation
+                margin-right: 15px
+
+                &:hover
+                  box-shadow: rgba(0, 0, 0, .15) 0 3px 9px 0
+                  transform: translateY(-2px)
+
+              .create-quiz-block-right-part-button-next
+                background-color: #13aa52
+                border: 1px solid #13aa52
+                border-radius: 4px
+                box-shadow: rgba(0, 0, 0, .1) 0 2px 4px 0
+                box-sizing: border-box
+                color: #fff
+                cursor: pointer
+                font-family: "Akzidenz Grotesk BQ Medium", -apple-system, BlinkMacSystemFont, sans-serif
+                font-size: 16px
+                font-weight: 400
+                outline: none
+                outline: 0
+                padding: 10px 25px
+                text-align: center
+                transform: translateY(0)
+                transition: transform 150ms, box-shadow 150ms
+                user-select: none
+                -webkit-user-select: none
+                touch-action: manipulation
+
+                &:hover
+                  box-shadow: rgba(0, 0, 0, .15) 0 3px 9px 0
+                  transform: translateY(-2px)
+
 /* Modal window for cards */
 
 .modal
@@ -1347,7 +1633,7 @@ label.checkbox [type="checkbox"]
     .logout-button-block
       justify-content: center
       // position: relative
-      transform: translateY(35vh)
+      transform: translateY(400%)
 
       .logout-button
         appearance: button
@@ -1531,3 +1817,8 @@ label.checkbox [type="checkbox"]
     top: 50%
     right: 0
     width: unset
+
+@media (min-width: 768px)
+  .create-quiz-block-right-part-button-back,
+  .create-quiz-block-right-part-button-next
+    padding: 10px 30px
