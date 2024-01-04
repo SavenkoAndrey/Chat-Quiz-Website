@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-// import { fetchRoom } from "../ReduxStore/reducers/reduxSaga/roomReducer";
+import { fetchRoom } from "../ReduxStore/reducers/reduxSaga/roomReducer";
 import { fetchUsers } from "../ReduxStore/reducers/reduxSaga/userReducer";
 
 const Loading = () => {
@@ -9,7 +9,7 @@ const Loading = () => {
 
   useEffect(() => {
     dispatch(fetchUsers());
-    // dispatch(fetchRoom());
+    dispatch(fetchRoom());
     setIsLoading(false);
   }, [dispatch]);
 

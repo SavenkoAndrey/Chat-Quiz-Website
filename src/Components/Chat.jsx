@@ -18,7 +18,7 @@ import InputEmoji from "react-input-emoji";
 
 const socket = io.connect("http://localhost:3001");
 
-const Chat = ({ userData, usersData, id }) => {
+const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
   const [theme, setTheme] = useState(localStorage.getItem("theme"));
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [isOpenChat, setIsOpenChat] = useState(false);
@@ -42,13 +42,28 @@ const Chat = ({ userData, usersData, id }) => {
 
   // the fn for find a chat and make active block
   const [activeFriendsBlock, setActiveFriendsBlock] = useState(null);
+  // const [activeGroupBlock, setActiveGroupBlock] = useState(null);
   const [newMessageLength, setNewMessageLength] = useState(0);
   // const [isReadMessage, setIsReadMessage] = useState(false);
+  const [newRoomData, setNewRoomData] = useState([]);
   const chatData = friends.find((chat) => chat.id === activeFriendsBlock);
+  const groupChatData = rooms.find((chat) => chat.id === activeFriendsBlock);
 
   const isOnline =
     activeFriendsBlock &&
+    !groupChatData &&
     onlineUsers.some((users) => users.userId === chatData.friendsId);
+
+  const lengthOnlineParticipants = [];
+
+  for (let i = 0; i < participants.length; i++) {
+    if (
+      participants[i].participantsId === onlineUsers[i]?.userId &&
+      participants[i].participantsId !== id
+    ) {
+      lengthOnlineParticipants.push(participants[i]);
+    }
+  }
 
   const handleBlockClick = (id) => {
     if (activeFriendsBlock === id) {
@@ -58,6 +73,7 @@ const Chat = ({ userData, usersData, id }) => {
       setActiveFriendsBlock(id);
     }
   };
+
   // if (chatData && newMessageLength === 0) {
   //   setIsReadMessage(true);
 
@@ -113,6 +129,30 @@ const Chat = ({ userData, usersData, id }) => {
     })
     .filter((message) => message.lastMessage !== null);
 
+  const lastGroupMessages = newRoomData
+    .map((group) => {
+      const messages = group.messages || [];
+      const messagesArray = Object.values(messages);
+      const sortLastMessage = messagesArray.sort((a, b) => {
+        return a.numberMessage - b.numberMessage;
+      });
+
+      const lastMessage =
+        messagesArray.length > 0
+          ? sortLastMessage[sortLastMessage.length - 1]
+          : null;
+
+      return {
+        groupId: group.roomId,
+        lastMessage: lastMessage,
+        groupIcon: group.groupIcon,
+        groupName: group.groupName,
+        // newMessagesCount: newMessageLength,
+        // isReadMessage: isReadMessage,
+      };
+    })
+    .filter((message) => message.lastMessage !== null);
+
   // request's state
 
   const [isCheckRequests, setIsCheckRequests] = useState(false);
@@ -131,7 +171,6 @@ const Chat = ({ userData, usersData, id }) => {
     const getTheme = localStorage.getItem("theme");
     setTheme(getTheme);
   };
-
   useLayoutEffect(() => {
     if (scrollRef.current) {
       setTimeout(() => {
@@ -148,7 +187,7 @@ const Chat = ({ userData, usersData, id }) => {
   useEffect(() => {
     const handleSendMessageButton = async (event) => {
       if (event.key === "Enter" && activeFriendsBlock) {
-        if (message.length > 0 && chatData !== undefined) {
+        if (message.length > 0 && [chatData || groupChatData] !== undefined) {
           // socket.emit("send_message", { message, activeFriendsBlock });
           const randomMessageKey =
             Math.random().toString(36).substring(2) + Date.now();
@@ -157,41 +196,69 @@ const Chat = ({ userData, usersData, id }) => {
           const dispatchTime = moment(message.createdAt).format("HH:mm:ss");
           const messageTimestamp = moment(dispatchTime, "HH:mm:ss").valueOf();
 
-          const messageUserRef = ref(
-            db,
-            `users/${id}/friends/${chatData.id}/messages/` + randomMessageKey
-          );
-          const messageFriendRef = ref(
-            db,
-            `users/${chatData.friendsId}/friends/${chatData.id}/messages/` +
-              randomMessageKey
-          );
-          // const isReadMessageRef = ref(
-          //   db,
-          //   `users/${id}/friends/${chatData.id}/`
-          // );
+          if (chatData) {
+            const messageUserRef = ref(
+              db,
+              `users/${id}/friends/${chatData.id}/messages/` + randomMessageKey
+            );
+            const messageFriendRef = ref(
+              db,
+              `users/${chatData.friendsId}/friends/${chatData.id}/messages/` +
+                randomMessageKey
+            );
+            // const isReadMessageRef = ref(
+            //   db,
+            //   `users/${id}/friends/${chatData.id}/`
+            // );
 
-          try {
-            await update(messageUserRef, {
-              message: message,
-              senderIcon: userData.userIcon,
-              senderId: id,
-              messageTime: messageTime,
-              numberMessage: messageTimestamp,
-            });
-            await update(messageFriendRef, {
-              message: message,
-              senderIcon: userData.userIcon,
-              senderId: id,
-              messageTime: messageTime,
-              numberMessage: messageTimestamp,
-            });
+            try {
+              await update(messageUserRef, {
+                message: message,
+                senderIcon: userData.userIcon,
+                senderId: id,
+                messageTime: messageTime,
+                numberMessage: messageTimestamp,
+              });
+              await update(messageFriendRef, {
+                message: message,
+                senderIcon: userData.userIcon,
+                senderId: id,
+                messageTime: messageTime,
+                numberMessage: messageTimestamp,
+              });
 
-            // if(messagesArray) {
-            //   await update(isReadMessageRef, {isReadMessage: false})
-            // }
-          } catch (error) {
-            console.error(error);
+              // if(messagesArray) {
+              //   await update(isReadMessageRef, {isReadMessage: false})
+              // }
+            } catch (error) {
+              console.error(error);
+            }
+          } else if (groupChatData) {
+            const messageRoomRef = ref(
+              db,
+              `rooms/${roomData.id}/messages/` + randomMessageKey
+            );
+            // const isReadMessageRef = ref(
+            //   db,
+            //   `users/${id}/friends/${chatData.id}/`
+            // );
+
+            try {
+              await update(messageRoomRef, {
+                message: message,
+                senderIcon: userData.userIcon,
+                senderName: userData.username,
+                senderId: id,
+                messageTime: messageTime,
+                numberMessage: messageTimestamp,
+              });
+
+              // if(messagesArray) {
+              //   await update(isReadMessageRef, {isReadMessage: false})
+              // }
+            } catch (error) {
+              console.error(error);
+            }
           }
 
           // effect for auto scroll to bottom
@@ -237,9 +304,11 @@ const Chat = ({ userData, usersData, id }) => {
     activeFriendsBlock,
     chatData,
     friends,
+    groupChatData,
     id,
     message,
     messageApi,
+    roomData,
     userData,
   ]);
 
@@ -275,13 +344,13 @@ const Chat = ({ userData, usersData, id }) => {
             id: key,
             ...messages[key],
           }));
-          if (!chatData.isReadMessage) {
-            const newMessages = newMessagesArray[newMessagesArray.length - 1];
-            console.log(newMessages);
-            setNewMessageLength(newMessagesArray.length);
-          } else {
-            setNewMessageLength(0);
-          }
+          // if (!chatData.isReadMessage) {
+          //   const newMessages = newMessagesArray[newMessagesArray.length - 1];
+          //   console.log(newMessages);
+          //   setNewMessageLength(newMessagesArray.length);
+          // } else {
+          //   setNewMessageLength(0);
+          // }
           setMessageReceived(newMessagesArray);
         } else {
           setMessageReceived([]);
@@ -294,8 +363,30 @@ const Chat = ({ userData, usersData, id }) => {
         // socket.off("receive_message");
         off(messageRef, "value", handleData);
       };
+    } else if (groupChatData) {
+      const messageGroupRef = ref(db, `rooms/${roomData.id}/messages`);
+
+      const handleGroupData = (snapshot) => {
+        const messages = snapshot.val();
+        if (messages) {
+          const keys = Object.keys(messages);
+          const newMessagesArray = keys.map((key) => ({
+            id: key,
+            ...messages[key],
+          }));
+
+          setMessageReceived(newMessagesArray);
+        } else {
+          setMessageReceived([]);
+        }
+      };
+      onValue(messageGroupRef, handleGroupData);
+
+      return () => {
+        off(messageGroupRef, "value", handleGroupData);
+      };
     }
-  }, [chatData, newMessageLength, userData]);
+  }, [chatData, newMessageLength, userData, roomData, groupChatData]);
 
   useEffect(() => {
     // click on the keybutton
@@ -339,6 +430,7 @@ const Chat = ({ userData, usersData, id }) => {
 
     const requestRef = ref(db, `users/${id}/requests`);
     const friendsRef = ref(db, `users/${id}/friends`);
+    const roomRef = ref(db, `rooms/`);
 
     const handleRequestsData = (snapshot) => {
       const requests = snapshot.val();
@@ -369,8 +461,24 @@ const Chat = ({ userData, usersData, id }) => {
       }
     };
 
+    const handleRoomData = (snapshot) => {
+      const room = snapshot.val();
+      if (room) {
+        const keys = Object.keys(room);
+        const roomsArray = keys.map((key) => ({
+          id: key,
+          ...room[key],
+        }));
+        setNewRoomData(roomsArray);
+      } else {
+        setNewRoomData([]);
+      }
+    };
+
     onValue(requestRef, handleRequestsData);
     onValue(friendsRef, handleFriendsData);
+
+    onValue(roomRef, handleRoomData);
 
     return () => {
       window.removeEventListener("keydown", handleEscButton);
@@ -378,8 +486,17 @@ const Chat = ({ userData, usersData, id }) => {
       clearTimeout(timer);
       off(requestRef, "value", handleRequestsData);
       off(friendsRef, "value", handleFriendsData);
+      off(roomRef, "value", handleRoomData);
     };
-  }, [findFriend, usersData, messageApi, id, message, isOpenChatSetting]);
+  }, [
+    findFriend,
+    usersData,
+    messageApi,
+    id,
+    message,
+    isOpenChatSetting,
+    roomData,
+  ]);
 
   // click on Add a friend
 
@@ -441,10 +558,89 @@ const Chat = ({ userData, usersData, id }) => {
 
   // Socket io
 
-  const sendMessage = () => {
-    if (chatData !== undefined && activeFriendsBlock) {
-      // socket.emit("send_message", { message, chatData });
+  const sendMessage = async () => {
+    if (message.length > 0 && [chatData || groupChatData] !== undefined) {
+      // socket.emit("send_message", { message, activeFriendsBlock });
+      const randomMessageKey =
+        Math.random().toString(36).substring(2) + Date.now();
 
+      const messageTime = moment(message.createdAt).format("HH:mm");
+      const dispatchTime = moment(message.createdAt).format("HH:mm:ss");
+      const messageTimestamp = moment(dispatchTime, "HH:mm:ss").valueOf();
+
+      if (chatData) {
+        const messageUserRef = ref(
+          db,
+          `users/${id}/friends/${chatData.id}/messages/` + randomMessageKey
+        );
+        const messageFriendRef = ref(
+          db,
+          `users/${chatData.friendsId}/friends/${chatData.id}/messages/` +
+            randomMessageKey
+        );
+        // const isReadMessageRef = ref(
+        //   db,
+        //   `users/${id}/friends/${chatData.id}/`
+        // );
+
+        try {
+          await update(messageUserRef, {
+            message: message,
+            senderIcon: userData.userIcon,
+            senderId: id,
+            messageTime: messageTime,
+            numberMessage: messageTimestamp,
+          });
+          await update(messageFriendRef, {
+            message: message,
+            senderIcon: userData.userIcon,
+            senderId: id,
+            messageTime: messageTime,
+            numberMessage: messageTimestamp,
+          });
+
+          // if(messagesArray) {
+          //   await update(isReadMessageRef, {isReadMessage: false})
+          // }
+        } catch (error) {
+          console.error(error);
+        }
+      } else if (groupChatData) {
+        const messageRoomRef = ref(
+          db,
+          `rooms/${roomData.id}/messages/` + randomMessageKey
+        );
+        // const isReadMessageRef = ref(
+        //   db,
+        //   `users/${id}/friends/${chatData.id}/`
+        // );
+
+        try {
+          await update(messageRoomRef, {
+            message: message,
+            senderIcon: userData.userIcon,
+            senderName: userData.username,
+            senderId: id,
+            messageTime: messageTime,
+            numberMessage: messageTimestamp,
+          });
+
+          // if(messagesArray) {
+          //   await update(isReadMessageRef, {isReadMessage: false})
+          // }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      // effect for auto scroll to bottom
+      if (scrollRef.current) {
+        scrollRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+          inline: "nearest",
+        });
+      }
       setMessage("");
     } else {
       messageApi.open({
@@ -624,10 +820,9 @@ const Chat = ({ userData, usersData, id }) => {
                   style={{ width: "85%", height: "70%" }}
                 />
               </div>
-              {isFoundFriend &&
-              isFoundFriend.username !== requests.friendsName ? (
-                <div key={isFoundFriend.id} className="find-friends-container">
-                  <div className="find-friends-block">
+              {isFoundFriend ? (
+                <div className="find-friends-container">
+                  <div key={isFoundFriend.id} className="find-friends-block">
                     <img
                       className="friends-icon"
                       src={isFoundFriend.userIcon}
@@ -648,6 +843,97 @@ const Chat = ({ userData, usersData, id }) => {
                   </div>
                   <div className="find-friends-block-line" />
                 </div>
+              ) : (
+                ""
+              )}
+              {roomData ? (
+                <>
+                  {lastGroupMessages.map((group) => (
+                    <div
+                      key={group.id}
+                      className={`group-message-block ${
+                        activeFriendsBlock === roomData.id ? "active" : ""
+                      }`}
+                      onClick={() =>
+                        handleBlockClick(roomData.id, roomData.creatorName)
+                      }
+                    >
+                      <div className="chats-message-sender-data">
+                        <div className="chats-message-icon-block">
+                          <img
+                            className="group-icon"
+                            src={group.groupIcon}
+                            alt="groupIcon"
+                          />
+                        </div>
+                        <div className="chats-message-text-block">
+                          <div className="chats-message-data-block">
+                            <span className="sender-nick">
+                              <span
+                                style={{ paddingRight: "15px", color: "#fff" }}
+                                className="material-symbols-outlined"
+                              >
+                                diversity_2
+                              </span>
+                              {group.groupName}
+                            </span>
+
+                            <p>{group.lastMessage.messageTime}</p>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <span
+                              style={{
+                                display: "block",
+                                maxWidth: "80%",
+                                fontSize: "20px",
+                                color: "#fff",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              <span>
+                                {group.lastMessage.senderName ===
+                                userData.username
+                                  ? "You: "
+                                  : `${group.lastMessage.senderName}: `}
+                              </span>
+                              {group.lastMessage.message}
+                            </span>
+                            <span
+                              style={
+                                isOnline
+                                  ? {
+                                      fontSize: "15px",
+                                      color: "#bdbdbd8e",
+                                      position: "relative",
+                                      top: "25px",
+                                      height: "50px",
+                                      wordSpacing: "-10px",
+                                    }
+                                  : {
+                                      fontSize: "15px",
+                                      color: "green",
+                                      position: "relative",
+                                      top: "25px",
+                                      height: "50px",
+                                      wordSpacing: "-10px",
+                                    }
+                              }
+                            >
+                              <b>✔ ✔</b>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
               ) : (
                 ""
               )}
@@ -776,7 +1062,11 @@ const Chat = ({ userData, usersData, id }) => {
                     id="room"
                     style={theme !== "dark" ? { color: "#000" } : {}}
                   >
-                    {activeFriendsBlock ? chatData.friendsName : "You are"}
+                    {!groupChatData && activeFriendsBlock
+                      ? chatData.friendsName
+                      : groupChatData
+                      ? groupChatData.groupName
+                      : "You are"}
                   </span>
                   <br />
                   <span
@@ -791,7 +1081,20 @@ const Chat = ({ userData, usersData, id }) => {
                             <li className="online-icon"></li>
                           </div>
                         ) : (
-                          <div style={{ color: "red" }}>offline</div>
+                          <>
+                            {!groupChatData ? (
+                              <div style={{ color: "red" }}>offline</div>
+                            ) : (
+                              <>
+                                <span>{participants.length} Partisipants </span>
+                                {lengthOnlineParticipants.length > 0 && (
+                                  <span style={{ color: "#6d6d6d" }}>
+                                    / online {lengthOnlineParticipants.length}
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </>
                         )}
                       </>
                     ) : (
@@ -858,10 +1161,12 @@ const Chat = ({ userData, usersData, id }) => {
                         : { fontSize: "25px", color: "#fff" }
                     }
                   >
-                    {activeFriendsBlock && (
+                    {activeFriendsBlock ? (
                       <SettingOutlined
                         onClick={() => setIsOpenChatSetting(!isOpenChatSetting)}
                       />
+                    ) : (
+                      ""
                     )}
                   </span>
                 </div>
@@ -895,10 +1200,22 @@ const Chat = ({ userData, usersData, id }) => {
                                   className="messages-users-image"
                                   alt="usersImages"
                                 />
+
                                 <div className="received-message">
+                                  {groupChatData && (
+                                    <p
+                                      style={{
+                                        color: "#df0808",
+                                        display: "flex",
+                                        paddingBottom: "5px",
+                                      }}
+                                    >
+                                      {messageData.senderName}
+                                    </p>
+                                  )}
                                   <p
                                     style={{
-                                      wordBreak: "normal",
+                                      wordBreak: "break-word",
                                       width: "90%",
                                     }}
                                   >
@@ -907,38 +1224,48 @@ const Chat = ({ userData, usersData, id }) => {
                                   <div
                                     style={{
                                       display: "flex",
-                                      width: "120px",
+                                      position: "relative",
+                                      justifyContent: "flex-end",
+                                      width: "100%",
+                                      left: "0%",
+                                      top: "-8px",
                                       margin: "0 1rem 0 0rem",
                                     }}
                                   >
-                                    <p
+                                    <div
                                       style={{
-                                        fontSize: "17px",
-                                        wordBreak: "keep-all",
-                                        padding: "1.1rem 0 0 .8rem",
-                                        color: "#515b5e",
+                                        width: "150px",
                                         display: "flex",
-                                        justifyContent: "flex-end",
-                                        flexDirection: "column",
-                                        alignItems: "flex-end",
+                                        justifyContent: "center",
+                                        margin: "0 20px 0 0",
+                                        position: "relative",
+                                        left: "35px",
                                       }}
                                     >
-                                      {messageData.messageTime}
-                                    </p>
-                                    <span
-                                      style={{
-                                        fontSize: "15px",
-                                        color: "#fff",
-                                        wordSpacing: "-11px",
-                                        display: "flex",
-                                        justifyContent: "flex-end",
-                                        flexDirection: "column",
-                                        alignItems: "flex-end",
-                                        width: "40px",
-                                      }}
-                                    >
-                                      ✔ ✔
-                                    </span>
+                                      <p
+                                        style={{
+                                          fontSize: "17px",
+                                          wordBreak: "keep-all",
+                                          color: "#515b5e",
+                                        }}
+                                      >
+                                        {messageData.messageTime}
+                                      </p>
+                                      <span
+                                        style={{
+                                          fontSize: "15px",
+                                          color: "#fff",
+                                          wordSpacing: "-11px",
+                                          width: "30px",
+                                          display: "flex",
+                                          justifyContent: "flex-end",
+                                          position: "relative",
+                                          left: "10px",
+                                        }}
+                                      >
+                                        ✔ ✔
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -951,8 +1278,8 @@ const Chat = ({ userData, usersData, id }) => {
                                 <div className="received-message">
                                   <p
                                     style={{
-                                      wordBreak: "normal",
-                                      width: "90%",
+                                      wordBreak: "break-word",
+                                      width: "85%",
                                     }}
                                   >
                                     {messageData.message}
@@ -960,7 +1287,11 @@ const Chat = ({ userData, usersData, id }) => {
                                   <div
                                     style={{
                                       display: "flex",
-                                      width: "120px",
+                                      position: "relative",
+                                      justifyContent: "flex-end",
+                                      width: "100%",
+                                      height: "20px",
+                                      right: "10px",
                                       margin: "0 1rem 0 0rem",
                                     }}
                                   >
@@ -987,7 +1318,10 @@ const Chat = ({ userData, usersData, id }) => {
                                         justifyContent: "flex-end",
                                         flexDirection: "column",
                                         alignItems: "flex-end",
-                                        width: "40px",
+
+                                        width: "30px",
+                                        // position: "relative",
+                                        // left: "10px",
                                       }}
                                     >
                                       ✔ ✔
@@ -1027,7 +1361,7 @@ const Chat = ({ userData, usersData, id }) => {
                   </p>
                 )}
               </div>
-              {activeFriendsBlock && (
+              {activeFriendsBlock ? (
                 <div className="message-container-block">
                   <span className="material-symbols-outlined" id="file">
                     fingerprint
@@ -1058,6 +1392,8 @@ const Chat = ({ userData, usersData, id }) => {
                     </span>
                   )}
                 </div>
+              ) : (
+                ""
               )}
             </div>
           </div>
