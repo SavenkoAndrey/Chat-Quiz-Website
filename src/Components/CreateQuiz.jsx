@@ -1,6 +1,6 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { Form, Input, message } from "antd";
-import { ref, set } from "firebase/database";
+import { ref, set, update } from "firebase/database";
 import React, { useEffect, useState } from "react";
 import { db } from "../DataBase/firebase";
 import SelectedPicturesModal from "../Modal/SelectedPicturesModal";
@@ -161,9 +161,17 @@ const CreateQuiz = ({ visible, users, onClose, userData }) => {
     console.log(updatedParticipants);
   };
 
+  const requests = participantsArray.map((participant) => ({
+    [participant.id]: {
+      participantsName: participant.username,
+      participantsIcon: participant.userIcon,
+    },
+  }));
+
   const createQuizRoom = async () => {
     const randomKey = Math.random().toString(36).substring(2) + Date.now();
     const randomRoomId = Math.random().toString(5).substring(20) + Date.now();
+    const randomRoomIdNumber = +randomRoomId;
     try {
       await Promise.all(
         participantsArray.map(async (participant) => {
@@ -179,27 +187,33 @@ const CreateQuiz = ({ visible, users, onClose, userData }) => {
             message: "Invitation to a quiz!",
             friendsRequest: false,
             quizRequest: true,
-            roomId: randomRoomId,
+            roomId: randomRoomIdNumber,
           });
         })
       );
 
-      const createRoom = ref(db, `rooms/` + randomRoomId);
+      const createRoom = ref(db, `rooms/` + randomRoomIdNumber);
+      const userPath = ref(db, `users/${userData.id}/roomId/`);
 
       await set(createRoom, {
-        userIcon: userData.userIcon,
-        username: userData.username,
+        creatorIcon: userData.userIcon,
+        creatorName: userData.username,
+        creatorId: userData.id,
+        isStarted: false,
         questions: questions,
         participants: {},
-        friendsRequest: false,
-        quizRequest: true,
-        roomId: randomRoomId,
+        requests: Object.assign({}, ...requests),
+        roomId: randomRoomIdNumber,
       });
+
+      await set(userPath, randomRoomIdNumber);
 
       messageApi.open({
         type: "success",
         content: "Invitations sent successfully",
       });
+
+      onClose();
     } catch (error) {
       console.error("Something went wrong with sending invitations", error);
     }

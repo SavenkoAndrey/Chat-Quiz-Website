@@ -7,6 +7,7 @@ body
 
 $dots: 5
 
+
 *
   margin: 0
   padding: 0
@@ -37,7 +38,6 @@ header
   display: flex
   justify-content: center
   align-items: center
-  margin-bottom: 1rem
 
 .user-icon-block
   position: absolute
@@ -387,10 +387,12 @@ label.checkbox [type="checkbox"]
   display: flex
   justify-content: space-between
   width: 100%
+  height: 100vh
   max-width: 1000px
   margin: 0 auto
   overflow: hidden
   z-index: 1
+  transform: translateY(15px)
 
 .card
   width: 50%
@@ -498,7 +500,6 @@ label.checkbox [type="checkbox"]
   width: 100%
   height: 100vh
   background: linear-gradient(to bottom right, #5D30BF, #ff6666)
-  transform: translateY(-17px)
   border-top: 2px solid black
   .create-quiz-header
     display: flex
@@ -534,7 +535,7 @@ label.checkbox [type="checkbox"]
 
       .participant-container
         display: block
-        height: 460px
+        height: 475px
         overflow-y: auto
         border-left: 2px solid white
         padding: 0 10px 0 20px
@@ -586,7 +587,7 @@ label.checkbox [type="checkbox"]
           display: flex
           justify-content: center
           width: 100%
-        
+
           span
             position: absolute
             left: 97%
@@ -754,6 +755,380 @@ label.checkbox [type="checkbox"]
                   transform: translateY(-2px)
 
               .create-quiz-block-right-part-button-next
+                background-color: #13aa52
+                border: 1px solid #13aa52
+                border-radius: 4px
+                box-shadow: rgba(0, 0, 0, .1) 0 2px 4px 0
+                box-sizing: border-box
+                color: #fff
+                cursor: pointer
+                font-family: "Akzidenz Grotesk BQ Medium", -apple-system, BlinkMacSystemFont, sans-serif
+                font-size: 16px
+                font-weight: 400
+                outline: none
+                outline: 0
+                padding: 10px 25px
+                text-align: center
+                transform: translateY(0)
+                transition: transform 150ms, box-shadow 150ms
+                user-select: none
+                -webkit-user-select: none
+                touch-action: manipulation
+
+                &:hover
+                  box-shadow: rgba(0, 0, 0, .15) 0 3px 9px 0
+                  transform: translateY(-2px)
+
+// Quiz 
+
+.quiz-container
+  width: 100%
+  height: 100vh
+  background: linear-gradient(to bottom right, #5D30BF, #ff6666)
+  border-top: 2px solid black
+  .quiz-moderator-container
+    width: 100%
+    height: 100vh
+    .quiz-container-header
+      display: flex
+      height: 10%
+      width: 100%
+      .participants-data
+        display: flex
+        align-items: center
+        position: relative
+        left: 45%
+        &:hover
+          cursor: default
+
+        .participants-icon-block
+          display: flex
+          align-items: center
+          width: 70px
+          img
+            border-radius: 50%
+            border: 2px solid #049447
+            width: 60px
+            height: 60px
+
+        .participants-name
+          transform: translateY(-100px)
+          font-size: 18px
+          position: absolute
+          width: 0px
+          transition: transform .2s ease-in
+          padding-right: 10px
+          pointer-events: none
+          &.show-name
+            width: 120px
+            position: relative
+            transform: translateY(0px)
+
+    .quiz-container-blocks
+      width: 100%
+      height: 100%
+      display: flex
+      .quiz-container-left-side
+        padding: 0px 50px 0 50px
+        width: 30%
+        height: 100%
+        border-right: 2px solid white
+        .setting-icons
+          display: flex
+          flex-direction: column
+          justify-content: center
+          height: 40%
+          align-items: center
+          margin-right: 1rem
+          .requests
+            width: 60px
+            height: 60px
+            border-radius: 50%
+            background: #fff
+            display: flex
+            justify-content: center
+            align-items: center
+            .material-symbols-outlined
+              font-size: 35px
+              &:hover
+                font-size: 45px
+                cursor: pointer
+              &.active
+                font-size: 45px
+          .statistics
+            width: 60px
+            height: 60px
+            border-radius: 50%
+            background: #fff
+            display: flex
+            justify-content: center
+            align-items: center
+            transform: translateY(10px)
+            .material-symbols-outlined
+              font-size: 35px
+              &:hover
+                font-size: 45px
+                cursor: pointer
+              &.active
+                font-size: 45px
+
+        .participant-container
+          display: block
+          height: 475px
+          overflow-y: auto
+          border-left: 2px solid white
+          border-top: 2px solid white
+          padding: 0 10px 0 20px
+
+          .participant-container-block
+            display: flex
+            height: 20%
+            align-items: center
+            border-bottom: 2px solid #c8ff00
+            margin-top: 10px
+
+            .participant-data
+              display: flex
+              align-items: center
+              justify-content: space-between
+              width: 100%
+              font-size: 20px
+              color: #ffd900
+              font-weight: bold
+              .participant-icon-block
+                img
+                  border-radius: 50%
+                  width: 80px
+                  height: 80px
+                  border: 1px solid #480ee9
+
+              .request-user-block
+                width: 33px
+                height: 33px
+                display: flex
+                justify-content: center
+                align-items: center
+              &:hover
+                cursor: default
+
+      .quiz-container-right-side
+        width: 69%
+        .quiz-container-right-side-header
+          display: flex
+          justify-content: center
+        .info-text
+          width: 100%
+          height: 30%
+          display: flex
+          justify-content: center
+          align-items: center
+          span
+            width: 50%
+            font-size: 20px
+            color: #210865
+
+        .quiz-container-right-side-start-btn
+          display: flex
+          justify-content: center
+          align-items: center
+          .start-btn
+            align-items: center
+            appearance: none
+            background-image: radial-gradient(100% 100% at 100% 0, #5adaff 0, #5468ff 100%)
+            border: 0
+            border-radius: 6px
+            box-shadow: rgba(45, 35, 66, .4) 0 2px 4px,rgba(45, 35, 66, .3) 0 7px 13px -3px,rgba(58, 65, 111, .5) 0 -3px 0 inset
+            box-sizing: border-box
+            color: #fff
+            cursor: pointer
+            display: inline-flex
+            font-family: "JetBrains Mono",monospace
+            height: 48px
+            justify-content: center
+            line-height: 1
+            list-style: none
+            overflow: hidden
+            padding-left: 16px
+            padding-right: 16px
+            position: relative
+            text-align: left
+            text-decoration: none
+            transition: box-shadow .15s,transform .15s
+            user-select: none
+            -webkit-user-select: none
+            touch-action: manipulation
+            white-space: nowrap
+            will-change: box-shadow,transform
+            font-size: 18px
+
+            &:focus
+              box-shadow: #3c4fe0 0 0 0 1.5px inset, rgba(45, 35, 66, .4) 0 2px 4px, rgba(45, 35, 66, .3) 0 7px 13px -3px, #3c4fe0 0 -3px 0 inset
+
+            &:hover
+              box-shadow: rgba(45, 35, 66, .4) 0 4px 8px, rgba(45, 35, 66, .3) 0 7px 13px -3px, #3c4fe0 0 -3px 0 inset
+              transform: translateY(-2px)
+
+            &:active
+              box-shadow: #3c4fe0 0 3px 7px inset
+              transform: translateY(2px)
+
+  .quiz-user-container
+    width: 100%
+    height: 100vh
+    .quiz-container-header
+      display: flex
+      height: 10%
+      width: 100%
+      .participants-data
+        display: flex
+        align-items: center
+        position: relative
+        left: 45%
+        &:hover
+          cursor: default
+
+        .participants-icon-block
+          display: flex
+          align-items: center
+          width: 70px
+          img
+            border-radius: 50%
+            border: 2px solid #049447
+            width: 60px
+            height: 60px
+
+        .participants-name
+          transform: translateY(-100px)
+          font-size: 18px
+          position: absolute
+          width: 0px
+          transition: transform .2s ease-in
+          padding-right: 10px
+          pointer-events: none
+          &.show-name
+            width: 120px
+            position: relative
+            transform: translateY(0px)
+
+    .quiz-container-blocks
+      width: 100%
+      height: 100%
+      display: flex
+
+      .quiz-info
+        width: 100%
+        height: 50%
+        display: grid
+        align-items: center
+        .quiz-info-header
+          display: flex
+          justify-content: center
+          align-items: center
+        .info-text
+          width: 100%
+          display: flex
+          justify-content: center
+          span
+            width: 30%
+            font-size: 20px
+            color: #210865
+      .quiz
+        width: 100%
+        height: 100%
+        .quiz-block-parts-header
+          width: 100%
+          height: 7%
+          display: flex
+          justify-content: center
+          align-items: center
+          .question
+            width: 80%
+            display: flex
+            justify-content: center
+            font-size: 20px
+            font-family: Georgia, 'Times New Roman', Times, serif
+            color: #f5fd02
+          span
+            position: relative
+            left: 5%
+            font-size: 22px
+            color: #1510b6
+        .quiz-block-parts
+          width: 100%
+          height: 100%
+          display: flex
+
+          .quiz-block-left-part
+            width: 40%
+            height: 100%
+            .quiz-block-left-part-picture
+              width: 100%
+              height: 55%
+              // background: #a2a2a261
+              display: flex
+              justify-content: center
+              align-items: center
+              padding: 2rem
+              img
+                max-width: 95%
+                max-height: 95%
+                border: 2px solid #fff
+
+          .quiz-block-right-part
+            width: 50%
+            height: 100%
+            display: block
+            transform: translateX(6%)
+            .quiz-block-right-part-answers
+              border-bottom: 2px solid white
+              padding: 2rem 0 2rem 0
+              line-height: 30px
+              width: 100%
+              height: 50%
+              line-height: 40px
+              #answer
+                display: block
+                width: 100%
+                color: #251632
+                transform: translateY(2px)
+                padding: 0 1rem 0 1rem
+                font-weight: bold
+                border-bottom: 2px solid white
+                &:hover
+                  cursor: pointer
+                  background: #99999971
+              .active
+                background: #99999971
+
+            .quiz-block-right-part-buttons
+              transform: translateY(10px)
+              .quiz-block-right-part-button-back
+                background-color: #5D30BF
+                border: 1px solid #9179c5
+                border-radius: 4px
+                box-shadow: rgba(0, 0, 0, .1) 0 2px 4px 0
+                box-sizing: border-box
+                color: #fff
+                cursor: pointer
+                font-family: "Akzidenz Grotesk BQ Medium", -apple-system, BlinkMacSystemFont, sans-serif
+                font-size: 16px
+                font-weight: 400
+                outline: none
+                outline: 0
+                padding: 10px 25px
+                text-align: center
+                transform: translateY(0)
+                transition: transform 150ms, box-shadow 150ms
+                user-select: none
+                -webkit-user-select: none
+                touch-action: manipulation
+                margin-right: 15px
+
+                &:hover
+                  box-shadow: rgba(0, 0, 0, .15) 0 3px 9px 0
+                  transform: translateY(-2px)
+
+              .quiz-block-right-part-button-next
                 background-color: #13aa52
                 border: 1px solid #13aa52
                 border-radius: 4px
@@ -1369,8 +1744,6 @@ label.checkbox [type="checkbox"]
         width: 35%
         height: 50px
       .find-friends-container
-
-        // height: 300px
         padding: 1.3rem 0 0rem 0
         width: 100%
         transform: translateY(35%)
@@ -1428,7 +1801,7 @@ label.checkbox [type="checkbox"]
             border-radius: 50%
             border: 2px dotted black
           .received-message
-            display: flex
+            display: block
             width: auto
             max-width: 45%
             padding: 10px 0px 3px 20px
@@ -1446,7 +1819,7 @@ label.checkbox [type="checkbox"]
           font-size: 20px
           padding: 10px 15px 3px 15px
           .received-message
-            display: flex
+            display: block
             width: auto
             max-width: 45%
             padding: 10px 0px 5px 20px
@@ -1590,6 +1963,43 @@ label.checkbox [type="checkbox"]
     &:hover
       cursor: pointer
 
+// Group chat
+
+.group-message-block
+  display: flex
+  z-index: 20
+  width: 100%
+  height: 20%
+  transform: translateY(53px)
+  border-bottom: 6px solid #700303
+  font-size: 25px
+  color: #f7ca4d
+  padding-left: 1rem
+
+  .chats-message-sender-data
+    display: flex
+    width: 100%
+    .chats-message-icon-block
+      display: flex
+      align-items: center
+      width: 20%
+      img
+        border-radius: 50%
+        width: 100%
+    .chats-message-text-block
+      padding: 30px 20px 15px 20px
+      width: 100%
+      .chats-message-data-block
+        display: flex
+        justify-content: space-between
+        padding-bottom: 10px
+        p
+          font-size: 15px
+
+  &.active
+    background-color: #cccccc44
+    border: 0
+
 /* User Setting */
 
 .user-setting-container
@@ -1721,6 +2131,16 @@ label.checkbox [type="checkbox"]
         cursor: pointer
 
 /* Animations */
+
+@keyframes bounce
+  0%, 20%, 50%, 80%, 100%
+    transform: translateY(0)
+
+  40%
+    transform: translateY(-60px)
+
+  60%
+    transform: translateY(25px)
 
 @keyframes swing
   0%,

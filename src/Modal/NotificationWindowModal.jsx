@@ -2,10 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useRef } from "react";
 import notificationSound from "../Sound/notification_sound.mp3";
 
-const NotificationWindowModal = ({ newNotification, visible, onClose }) => {
+const NotificationWindowModal = ({
+  newNotification,
+  visible,
+  onClose,
+  isOpenNotification,
+}) => {
   const [userInteracted, setUserInteracted] = useState(false);
   const noticeSoundRef = useRef(null);
-
+  console.log(visible);
   useEffect(() => {
     const handleUserInteracted = () => {
       setUserInteracted(true);
@@ -13,20 +18,25 @@ const NotificationWindowModal = ({ newNotification, visible, onClose }) => {
 
     window.addEventListener("click", handleUserInteracted);
 
-    if (noticeSoundRef.current && visible && userInteracted) {
-      noticeSoundRef.current.play();
-    }
-
     const timeout = setTimeout(() => {
       onClose();
     }, 5000);
+
+    if (
+      noticeSoundRef.current &&
+      visible &&
+      userInteracted &&
+      !isOpenNotification
+    ) {
+      noticeSoundRef.current.play();
+    }
 
     return () => {
       clearTimeout(timeout);
 
       window.removeEventListener("click", handleUserInteracted);
     };
-  }, [onClose, newNotification, visible, userInteracted]);
+  }, [onClose, newNotification, visible, userInteracted, isOpenNotification]);
 
   return visible ? (
     <div className="notification-window-container">

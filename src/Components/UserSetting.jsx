@@ -1,5 +1,5 @@
 import { CameraOutlined, UserOutlined } from "@ant-design/icons";
-import { ref, update } from "firebase/database";
+import { ref, remove, update } from "firebase/database";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../DataBase/firebase";
@@ -20,6 +20,13 @@ const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
       fontSize: "20px",
       display: "flex",
       alignItems: "center",
+    },
+    leaveFromRoom: {
+      cursor: "pointer",
+      fontSize: "20px",
+      display: "flex",
+      alignItems: "center",
+      paddingLeft: "10px",
     },
   };
 
@@ -48,6 +55,7 @@ const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
 
   const getUserId = localStorage.getItem("userId");
   const userPath = `users/${getUserId}/`;
+  const roomPath = `rooms/${roomId}/participants/${getUserId}`;
 
   // for edit icon
 
@@ -68,6 +76,19 @@ const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
 
     setEditName(editName);
     setShowInputEditName(false);
+  };
+
+  // for leave from room
+
+  const handleLeaveFromRoom = async () => {
+    const updateRoom = ref(db, userPath);
+    const updateParticipants = ref(db, roomPath);
+    try {
+      await update(updateRoom, { roomId: null });
+      await remove(updateParticipants);
+    } catch (error) {
+      console.error("Something went wrong: ", error);
+    }
   };
 
   // Button`s listener
@@ -164,9 +185,20 @@ const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
           </div>
           <div className="user-room-id">
             <h4>Room ID: {roomId}</h4>
+            {roomId && (
+              <span
+                onClick={handleLeaveFromRoom}
+                style={styles.leaveFromRoom}
+                className="material-symbols-outlined"
+              >
+                logout
+              </span>
+            )}
           </div>
           <div className="user-room-id">
-            <h4>Privilege: <span style={{color: 'red'}}>{privilege}</span></h4>
+            <h4>
+              Privilege: <span style={{ color: "red" }}>{privilege}</span>
+            </h4>
           </div>
           <div className="user-id">
             <h4>Your ID: {id}</h4>
