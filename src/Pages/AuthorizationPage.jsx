@@ -30,7 +30,7 @@ const AuthorizationPage = () => {
 
   // sign in with Google acc and add to firebase
 
-  const signInWithGoogle = () => {
+  const signInWithGoogle = async () => {
     signInWithPopup(auth, provider)
       .then((result) => {
         // Sigh in is success, now get info about users from `result.user`
@@ -49,11 +49,9 @@ const AuthorizationPage = () => {
           });
         }
         localStorage.setItem("userId", user.uid);
-        localStorage.setItem("username", user.displayName);
-        localStorage.setItem("email", user.email);
-        navigate("/test");
+        localStorage.setItem("theme", "dark");
 
-        console.log(user);
+        navigate("/test");
       })
       .catch((error) => {
         console.error(error);
@@ -151,8 +149,6 @@ const AuthorizationPage = () => {
     const mail = await users.find((mail) => mail.email === userMail);
 
     const isLogin = userPassword && mail;
-
-    // console.log(isLogin.id);
 
     if (isLogin) {
       checkRemember(isLogin.id);

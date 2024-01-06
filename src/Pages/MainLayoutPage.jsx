@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import Chat from "../Components/Chat";
 import Header from "../Components/Header";
 import Loading from "../Components/Loading";
-import { Form, message } from "antd";
+import { message } from "antd";
 
 // Pictures
 
@@ -13,24 +13,30 @@ import CreateQuiz from "../Components/CreateQuiz";
 import { off, onValue, ref, set, update } from "firebase/database";
 import { db } from "../DataBase/firebase";
 import PieChart from "../Components/PieChart";
+import Histograms from "../Components/Histograms";
+import QuizContainer from "../Elements/QuizContainer";
+import QuizInfo from "../Elements/QuizInfo";
 
 const MainLayoutPage = () => {
   // Styles
   const styles = {
     quizData: {
       width: "100%",
-      height: "100%",
+      height: "70%",
       display: "flex",
       justifyContent: "center",
     },
     answersBlock: {
-      width: "80%",
-      height: "90%",
+      width: "100%",
+      height: "78%",
       padding: "2rem",
-      display: "block",
+      display: "flex",
+      flexWrap: "wrap",
+      overflowY: "auto",
+      borderBottom: "2px solid white",
     },
     choosedAnswerBox: {
-      maxWidth: "30%",
+      width: "35%",
       padding: "1rem",
       border: "2px solid #fff",
       borderRadius: "15px",
@@ -57,15 +63,6 @@ const MainLayoutPage = () => {
       marginTop: "20px",
       color: "#fff",
     },
-    statisticsBlock: {
-      display: "block",
-      width: "350px",
-      height: "475px",
-      overflowY: "auto",
-      borderLeft: "2px solid white",
-      borderTop: "2px solid white",
-      padding: "0 0px 20px 20px",
-    },
   };
 
   // get  Main Data of users and find
@@ -85,6 +82,11 @@ const MainLayoutPage = () => {
 
   const [participantsArray, setParticipantsArray] = useState([]);
   const [requestsArray, setRequestsArray] = useState([]);
+  // find not accepted request
+  const findNotAcceptedRequest = requestsArray.map(
+    (request) => request.acceptRequst === false
+  );
+  const [isLoadingRequest, setIsLoadingRequest] = useState(true);
   const [isHover, setIsHover] = useState(null);
 
   const roomData = rooms.find((room) => room.creatorId === getUserId);
@@ -94,15 +96,12 @@ const MainLayoutPage = () => {
   const [isCreateQuiz, setIsCreateQuiz] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
   const [isStartedQuiz, setIsStartedQuiz] = useState(false);
-  const [isFinishQuiz, setIsFinishQuiz] = useState(false);
   const [isFinishedParticipantsArray, setIsFinishedParticipantsArray] =
     useState([]); // the state is for map all of the participants data and make a statistics
   const [isFinishedParticipantsData, setIsFinishedParticipantsData] =
     useState(null);
   const [checkParticipantsFinishedData, setCheckParticipantsFinishedData] =
     useState(null);
-
-  console.log(isFinishedParticipantsData, checkParticipantsFinishedData);
 
   const hancleCloseQuizCreator = () => {
     setIsCreateQuiz(false);
@@ -118,6 +117,17 @@ const MainLayoutPage = () => {
       });
     }
   };
+
+  // if someone cancelled the invitation to quiz
+
+  let notAcceptedRequestCount = 0;
+
+  for (let i = 0; i < requestsArray.length; i++) {
+    if (findNotAcceptedRequest) {
+      notAcceptedRequestCount++;
+    }
+  }
+
   // for control and render the component if some data was update
 
   useEffect(() => {
@@ -179,17 +189,14 @@ const MainLayoutPage = () => {
             (data) => data.id === userData.id
           );
 
-          console.log(findUser);
-          setIsFinishQuiz(true);
           setIsFinishedParticipantsArray(findUser);
           setIsFinishedParticipantsData(foundUserData);
         } else {
           setIsFinishedParticipantsArray([]);
           setIsFinishedParticipantsData(null);
-          setIsFinishQuiz(false);
         }
       };
-      const requestRef = ref(db, `rooms/${roomData?.id}/requests`);
+      const requestRef = ref(db, `rooms/${userData?.roomId}/requests`);
 
       const handleRequestsData = (snapshot) => {
         const requests = snapshot.val();
@@ -201,17 +208,25 @@ const MainLayoutPage = () => {
             ...requests[key],
           }));
           setRequestsArray(requestsArray);
+          setIsLoadingRequest(false);
         } else {
           setRequestsArray([]);
         }
       };
 
-      // automaticle have start quiz when all of participants are ready
-
       const quizRef = ref(db, `rooms/${userData.roomId}/`);
 
-      const handleStartQuiz = async () => {
-        if (requestsArray.length <= 0) {
+      const handleStartQuiz = async (snapshot) => {
+        const isStarted = snapshot.val();
+
+        if (isStarted) {
+          setIsStartedQuiz(true);
+        }
+
+        if (
+          requestsArray.length - notAcceptedRequestCount <= 0 &&
+          !isLoadingRequest
+        ) {
           try {
             await update(quizRef, { isStarted: true });
             setIsStartedQuiz(true);
@@ -233,72 +248,89 @@ const MainLayoutPage = () => {
         off(quizRef, "value", handleStartQuiz);
       };
     }
-  }, [quizData, requestsArray.length, roomData, userData]);
+  }, [
+    notAcceptedRequestCount,
+    isLoadingRequest,
+    quizData,
+    requestsArray.length,
+    roomData,
+    userData,
+  ]);
 
   const isParicipantsHover = (participantsId) => {
     setIsHover(participantsId);
   };
 
-  const handleStartQuiz = async () => {
-    const quizRef = ref(db, `rooms/${userData.roomId}/`);
-    try {
-      await update(quizRef, { isStarted: true });
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   // next - back btn
 
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState([]);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [choosedAnswers, setChoosedAnswers] = useState([]);
   const [activeAnswer, setActiveAnswer] = useState(null);
-  const questionLength = quizData?.questions.length;
-
-  // console.log(quizData.questions[questionIndex].questionInput);
+  const [activeAnswerArray, setActiveAnswerArray] = useState([]);
 
   const selectAnswer = (answerIndex) => {
     if (activeAnswer === answerIndex) {
       setActiveAnswer(null);
     } else {
+      const updatedChoosedAnswers = [...choosedAnswers];
+      updatedChoosedAnswers[questionIndex] = answerIndex;
+
       setActiveAnswer(answerIndex);
+      setChoosedAnswers(updatedChoosedAnswers);
+      setActiveAnswerArray(updatedChoosedAnswers);
     }
     setSelectedAnswer(answerIndex);
-    console.log(answerIndex, selectedAnswer, activeAnswer);
   };
 
   const handleNextButton = () => {
-    if (questionIndex === questionLength) {
-      setSelectedAnswer(...selectedAnswer);
+    if (questionIndex + 1 !== quizData.questions.length) {
+      if (choosedAnswers.length === questionIndex) {
+        setSelectedAnswer(null);
+        setActiveAnswer(null);
+        setChoosedAnswers([...choosedAnswers, selectedAnswer]);
+        setQuestionIndex(questionIndex + 1);
+        setActiveAnswerArray([...activeAnswerArray, selectedAnswer]);
+      } else {
+        const updatedChoosedAnswers = [...choosedAnswers];
+        updatedChoosedAnswers[questionIndex] = selectedAnswer;
+        setActiveAnswer(activeAnswerArray[questionIndex + 1]);
+        setSelectedAnswer(choosedAnswers[questionIndex + 1]);
+        setChoosedAnswers(updatedChoosedAnswers);
+        setActiveAnswerArray(updatedChoosedAnswers);
+        setQuestionIndex(questionIndex + 1);
+      }
+    } else {
+      finishQuiz();
     }
-    setQuestionIndex(questionIndex + 1);
   };
 
   const handleBackButton = () => {
     if (questionIndex > 0) {
       setQuestionIndex(questionIndex - 1);
+      setActiveAnswer(activeAnswerArray[questionIndex - 1]);
+      setSelectedAnswer(choosedAnswers[questionIndex - 1]);
     }
   };
 
-  const handleFinishButton = () => {
+  const finishQuiz = async () => {
     let currentPoints = 0;
     const participantPoint = ref(
       db,
       `rooms/${userData.roomId}/participantPoint/` + userData.id
     );
+    // Checking if selected answer is right
+    for (let i = 0; i < quizData.questions.length; i++) {
+      if (choosedAnswers[i] === quizData.questions[i].selectedAnswer) {
+        currentPoints++;
+      }
+    }
     try {
-      quizData.questions.forEach(async (question) => {
-        // Проверяем, если выбранный ответ совпадает с правильным ответом
-        if (selectedAnswer === question.selectedAnswer) {
-          currentPoints++; // Увеличиваем счётчик баллов
-        }
-        await set(participantPoint, {
-          participantIcon: userData.userIcon,
-          participantName: userData.username,
-          point: currentPoints,
-          choosedAnswer: selectedAnswer,
-          // wrongAnswers:
-        });
+      await set(participantPoint, {
+        participantIcon: userData.userIcon,
+        participantName: userData.username,
+        point: currentPoints,
+        choosedAnswer: choosedAnswers,
       });
     } catch (error) {
       alert(error);
@@ -307,21 +339,30 @@ const MainLayoutPage = () => {
 
   // for conrol information about participants data after finished quiz
 
-  const [openRequest, setOpenRequest] = useState(true);
-  const [openStatistics, setOpenStatistics] = useState(false);
+  // calculate score
+  const calculateScore = (totalQuestions, totalAnswers, maxScore) => {
+    const scorePerQuestion = maxScore / totalQuestions;
+    let score = scorePerQuestion * totalAnswers;
+    if (score === 0) {
+      score = 1;
+    }
+    return score;
+  };
 
   const handleFinishedParticipandsData = (participantId) => {
-    setCheckParticipantsFinishedData(quizData.participantPoint[participantId]);
-  };
-
-  const handleOpenRequest = () => {
-    setOpenStatistics(false);
-    setOpenRequest(true);
-  };
-
-  const handleOpenStatistic = () => {
-    setOpenRequest(false);
-    setOpenStatistics(true);
+    const isFoundPointsData = isFinishedParticipantsArray.find(
+      (participant) => participant.id === participantId
+    );
+    if (isFoundPointsData) {
+      setCheckParticipantsFinishedData(
+        quizData.participantPoint[participantId]
+      );
+    } else {
+      messageApi.open({
+        type: "warning",
+        content: "The participant doesn`t finish yet",
+      });
+    }
   };
 
   return !users.length ? (
@@ -347,9 +388,11 @@ const MainLayoutPage = () => {
         <div className="container-layout">
           {userData && userData.privilege !== "Admin" ? (
             <>
-              {quizData ? (
+              {newRoomData ? (
                 <div className="quiz-container">
-                  {userData && userData.privilege === "Moderator" ? (
+                  {userData &&
+                  userData.privilege === "Moderator" &&
+                  quizData?.creatorId === userData.id ? (
                     <div className="quiz-moderator-container">
                       <div className="quiz-container-header">
                         {participantsArray.map((participant) => (
@@ -382,376 +425,24 @@ const MainLayoutPage = () => {
                           </div>
                         ))}
                       </div>
-                      {!isStartedQuiz ? (
-                        <div className="quiz-container-blocks">
-                          <div className="quiz-container-left-side">
-                            <Form>
-                              <Form.Item>
-                                <h2
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  Requests
-                                </h2>
-
-                                <div className="participant-container">
-                                  {requestsArray.length > 0 ? (
-                                    <>
-                                      {requestsArray.map((participant) => (
-                                        <div
-                                          key={participant.id}
-                                          className="participant-container-block"
-                                        >
-                                          {!participant.acceptRequest ? (
-                                            <div className="participant-data">
-                                              <div className="participant-icon-block">
-                                                <img
-                                                  src={
-                                                    participant.participantsIcon
-                                                  }
-                                                  alt="participant-icon"
-                                                />
-                                              </div>
-                                              <span>
-                                                {participant.participantsName}
-                                              </span>
-                                              <div className="request-user-block">
-                                                {participant.acceptRequest ===
-                                                undefined ? (
-                                                  <span className="material-symbols-outlined">
-                                                    schedule
-                                                  </span>
-                                                ) : (
-                                                  <span
-                                                    style={{ color: "#3f0202" }}
-                                                    className="material-symbols-outlined"
-                                                  >
-                                                    person_cancel
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            ""
-                                          )}
-                                        </div>
-                                      ))}
-                                    </>
-                                  ) : (
-                                    <span
-                                      style={{
-                                        display: "flex",
-                                        justifyContent: "center",
-                                        alignItems: "center",
-                                        width: "100%",
-                                        height: "100%",
-                                        fontSize: "20px",
-                                        color: "orange",
-                                        borderTop: "2px solid white",
-                                      }}
-                                    >
-                                      Every participants accepted request!
-                                    </span>
-                                  )}
-                                </div>
-                              </Form.Item>
-                            </Form>
-                          </div>
-                          <div className="quiz-container-right-side">
-                            <div className="quiz-container-right-side-header">
-                              <h1>
-                                Count of ready partiscipants:{" "}
-                                {participantsArray.length}/
-                                {requestsArray.length +
-                                  participantsArray.length}
-                              </h1>
-                            </div>
-                            <div className="info-text">
-                              <span>
-                                The quiz will begin when all participants are
-                                ready, If you wanna start quiz immediately,
-                                click on the button below
-                              </span>
-                            </div>
-                            <div className="quiz-container-right-side-start-btn">
-                              <button
-                                onClick={handleStartQuiz}
-                                className="start-btn"
-                              >
-                                Start
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="quiz-container-blocks">
-                          <div
-                            className="quiz-container-left-side"
-                            style={{
-                              display: "flex",
-                              width: "31%",
-                              padding: "0 20px 0 20px",
-                            }}
-                          >
-                            <div className="setting-icons">
-                              <div
-                                className="requests"
-                                onClick={handleOpenRequest}
-                              >
-                                <span
-                                  id="requests"
-                                  className={`material-symbols-outlined ${
-                                    openRequest ? "active" : ""
-                                  }`}
-                                >
-                                  public
-                                </span>
-                              </div>
-                              <div
-                                className="statistics"
-                                onClick={handleOpenStatistic}
-                              >
-                                <span
-                                  id="statistics"
-                                  className={`material-symbols-outlined ${
-                                    openStatistics ? "active" : ""
-                                  }`}
-                                >
-                                  monitoring
-                                </span>
-                              </div>
-                            </div>
-                            {openRequest && (
-                              <Form>
-                                <Form.Item>
-                                  <h2
-                                    style={{
-                                      display: "flex",
-                                      justifyContent: "center",
-                                    }}
-                                  >
-                                    Requests
-                                  </h2>
-
-                                  <div className="participant-container">
-                                    {requestsArray.length > 0 ? (
-                                      <>
-                                        {requestsArray.map((participant) => (
-                                          <div
-                                            key={participant.id}
-                                            className="participant-container-block"
-                                          >
-                                            {!participant.acceptRequest ? (
-                                              <div className="participant-data">
-                                                <div className="participant-icon-block">
-                                                  <img
-                                                    src={
-                                                      participant.participantsIcon
-                                                    }
-                                                    alt="participant-icon"
-                                                  />
-                                                </div>
-                                                <span>
-                                                  {participant.participantsName}
-                                                </span>
-                                                <div className="request-user-block">
-                                                  {participant.acceptRequest ===
-                                                  undefined ? (
-                                                    <span className="material-symbols-outlined">
-                                                      schedule
-                                                    </span>
-                                                  ) : (
-                                                    <span
-                                                      style={{
-                                                        color: "#3f0202",
-                                                      }}
-                                                      className="material-symbols-outlined"
-                                                    >
-                                                      person_cancel
-                                                    </span>
-                                                  )}
-                                                </div>
-                                              </div>
-                                            ) : (
-                                              ""
-                                            )}
-                                          </div>
-                                        ))}
-                                      </>
-                                    ) : (
-                                      <span
-                                        style={{
-                                          display: "flex",
-                                          justifyContent: "center",
-                                          alignItems: "center",
-                                          width: "100%",
-                                          height: "100%",
-                                          fontSize: "20px",
-                                          color: "orange",
-                                          borderTop: "2px solid white",
-                                        }}
-                                      >
-                                        Every participants accepted request!
-                                      </span>
-                                    )}
-                                  </div>
-                                </Form.Item>
-                              </Form>
-                            )}
-                            {openStatistics && (
-                              <Form>
-                                <Form.Item>
-                                  <h2
-                                    style={{
-                                      display: "flex",
-                                      justifyContent: "center",
-                                    }}
-                                  >
-                                    Statistics
-                                  </h2>
-
-                                  <div
-                                    className="statistics-container"
-                                    style={styles.statisticsBlock}
-                                  >
-                                    <div
-                                      className="pie-chart"
-                                      style={{ width: "80%" }}
-                                    >
-                                      <PieChart
-                                        participants={
-                                          isFinishedParticipantsArray
-                                        }
-                                        questionsQuizLength={
-                                          quizData.questions.length
-                                        }
-                                      />
-                                    </div>
-                                  </div>
-                                </Form.Item>
-                              </Form>
-                            )}
-                          </div>
-                          {checkParticipantsFinishedData ? (
-                            <div className="quiz-container-right-side">
-                              <div className="quiz-container-right-side-header">
-                                <div
-                                  className="header-i"
-                                  style={{ display: "block" }}
-                                >
-                                  <h1>
-                                    {
-                                      checkParticipantsFinishedData.participantName
-                                    }
-                                  </h1>
-                                  <h2
-                                    style={{
-                                      display: "flex",
-                                      justifyContent: "center",
-                                      color: "orange",
-                                    }}
-                                  >
-                                    Score: {checkParticipantsFinishedData.point}
-                                    /{quizData.questions.length}
-                                  </h2>
-                                </div>
-                              </div>
-                              <div
-                                className="quiz-data"
-                                style={{
-                                  display: "flex",
-                                  width: "100%",
-                                  height: "100%",
-                                }}
-                              >
-                                {quizData.questions.map((question, index) => (
-                                  <div
-                                    key={question.id}
-                                    className="answers-block"
-                                    style={{
-                                      display: "block",
-                                      width: "100%",
-                                      height: "90%",
-                                      padding: "2rem",
-                                    }}
-                                  >
-                                    <div
-                                      style={styles.choosedAnswerBox}
-                                      className="choosed-answer-box"
-                                    >
-                                      <div
-                                        className="question"
-                                        style={styles.question}
-                                      >
-                                        <h3>
-                                          {index + 1}. {question.questionInput}
-                                        </h3>
-                                        <span>
-                                          {question.answers[
-                                            checkParticipantsFinishedData
-                                              .choosedAnswer
-                                          ] ===
-                                          question.answers[
-                                            question.selectedAnswer
-                                          ] ? (
-                                            <span style={{ color: "#00fa53" }}>
-                                              +1
-                                            </span>
-                                          ) : (
-                                            <span style={{ color: "red" }}>
-                                              0
-                                            </span>
-                                          )}
-                                        </span>
-                                      </div>
-                                      <div
-                                        className="choosed-answer"
-                                        style={
-                                          question.answers[
-                                            checkParticipantsFinishedData
-                                              .choosedAnswer
-                                          ] ===
-                                          question.answers[
-                                            question.selectedAnswer
-                                          ]
-                                            ? styles.rightAnswer
-                                            : styles.wrongAnswer
-                                        }
-                                      >
-                                        {
-                                          question.answers[
-                                            checkParticipantsFinishedData
-                                              .choosedAnswer
-                                          ]
-                                        }
-                                      </div>
-                                      <div
-                                        className="right-answer"
-                                        style={styles.rightAnswer}
-                                      >
-                                        {
-                                          question.answers[
-                                            question.selectedAnswer
-                                          ]
-                                        }
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="quiz-container-right-side-start-btn"></div>
-                            </div>
-                          ) : (
-                            ""
-                          )}
-                        </div>
-                      )}
+                      <QuizContainer
+                        userData={userData}
+                        checkParticipantsFinishedData={
+                          checkParticipantsFinishedData
+                        }
+                        requestsArray={requestsArray}
+                        participantsArray={participantsArray}
+                        isFinishedParticipantsArray={
+                          isFinishedParticipantsArray
+                        }
+                        quizData={quizData}
+                        isStartedQuiz={isStartedQuiz}
+                        notAccepedRequest={notAcceptedRequestCount}
+                      />
                     </div>
                   ) : (
                     <>
-                      {!isFinishQuiz ? (
+                      {!isFinishedParticipantsData ? (
                         <div className="quiz-user-container">
                           <div className="quiz-container-header">
                             {participantsArray.map((participant) => (
@@ -783,28 +474,11 @@ const MainLayoutPage = () => {
                           </div>
                           <div className="quiz-container-blocks">
                             {!isStartedQuiz ? (
-                              <div className="quiz-info">
-                                <div className="quiz-info-header">
-                                  <h1>
-                                    Count of ready partiscipants:{" "}
-                                    <span style={{ color: "red" }}>
-                                      {participantsArray.length}
-                                    </span>
-                                    /
-                                    <span style={{ color: "#3fdf06" }}>
-                                      {requestsArray.length +
-                                        participantsArray.length}
-                                    </span>
-                                  </h1>
-                                </div>
-                                <div className="info-text">
-                                  <span>
-                                    The quiz will begin when all participants
-                                    are ready, however you already able to use
-                                    the chat with partiscipants
-                                  </span>
-                                </div>
-                              </div>
+                              <QuizInfo
+                                participantsArray={participantsArray}
+                                requestsArray={requestsArray}
+                                notAccepedRequest={notAcceptedRequestCount}
+                              />
                             ) : (
                               <div className="quiz">
                                 <div className="quiz-block-parts-header">
@@ -815,7 +489,8 @@ const MainLayoutPage = () => {
                                     }
                                   </div>
                                   <span>
-                                    {questionIndex}/{quizData.questions.length}
+                                    {questionIndex + 1}/
+                                    {quizData.questions.length}
                                   </span>
                                 </div>
                                 <div className="quiz-block-parts">
@@ -868,7 +543,7 @@ const MainLayoutPage = () => {
                                         <button
                                           style={{ background: "red" }}
                                           className="quiz-block-right-part-button-next"
-                                          onClick={handleFinishButton}
+                                          onClick={handleNextButton}
                                         >
                                           Finish
                                         </button>
@@ -914,24 +589,95 @@ const MainLayoutPage = () => {
                             <div className="quiz">
                               <div className="quiz-block-parts-header">
                                 <div className="question">
-                                  <h1>
-                                    Score {isFinishedParticipantsData.point}/
-                                    {quizData.questions.length}
-                                  </h1>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                      width: "70%",
+                                    }}
+                                  >
+                                    <h1>
+                                      Right answers{" "}
+                                      {isFinishedParticipantsData.point}/
+                                      {quizData.questions.length}
+                                    </h1>
+                                    <h3>
+                                      Score{" "}
+                                      {calculateScore(
+                                        quizData.questions.length,
+                                        isFinishedParticipantsData.point,
+                                        10
+                                      )}
+                                      /10
+                                    </h3>
+                                  </div>
                                 </div>
                               </div>
                               <div
                                 className="quiz-data"
                                 style={styles.quizData}
                               >
-                                {quizData.questions.map((question, index) => (
-                                  <div
-                                    key={question.id}
-                                    className="answers-block"
-                                    style={styles.answersBlock}
+                                <div
+                                  className="statistics-container"
+                                  style={{
+                                    display: "block",
+                                    width: "360px",
+                                    height: "475px",
+                                    overflowY: "auto",
+                                    borderRight: "2px solid white",
+                                    borderTop: "2px solid white",
+                                    padding: "10px 20px 20px 20px",
+                                  }}
+                                >
+                                  <h2
+                                    style={{
+                                      display: "flex",
+                                      width: "100%",
+                                      justifyContent: "center",
+                                      color: "orange",
+                                    }}
                                   >
+                                    Statistics
+                                  </h2>
+
+                                  <div
+                                    className="pie-chart"
+                                    style={{ width: "100%" }}
+                                  >
+                                    <PieChart
+                                      participants={isFinishedParticipantsArray}
+                                      questionsQuizLength={
+                                        quizData.questions.length
+                                      }
+                                    />
+                                  </div>
+                                  <div
+                                    className="histograms"
+                                    style={{ width: "100%" }}
+                                  >
+                                    <Histograms
+                                      participantsPoints={
+                                        isFinishedParticipantsArray
+                                      }
+                                      questionsQuizLength={
+                                        quizData.questions.length
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                                <div
+                                  className="answers-block"
+                                  style={styles.answersBlock}
+                                >
+                                  {quizData.questions.map((question, index) => (
                                     <div
-                                      style={styles.choosedAnswerBox}
+                                      key={question.id}
+                                      style={{
+                                        ...styles.choosedAnswerBox,
+                                        width: "calc(33.33% - 20px)",
+                                        margin: "10px",
+                                      }}
                                       className="choosed-answer-box"
                                     >
                                       <div
@@ -944,7 +690,7 @@ const MainLayoutPage = () => {
                                         <span>
                                           {question.answers[
                                             isFinishedParticipantsData
-                                              .choosedAnswer
+                                              .choosedAnswer[index]
                                           ] ===
                                           question.answers[
                                             question.selectedAnswer
@@ -964,7 +710,7 @@ const MainLayoutPage = () => {
                                         style={
                                           question.answers[
                                             isFinishedParticipantsData
-                                              .choosedAnswer
+                                              .choosedAnswer[index]
                                           ] ===
                                           question.answers[
                                             question.selectedAnswer
@@ -976,7 +722,7 @@ const MainLayoutPage = () => {
                                         {
                                           question.answers[
                                             isFinishedParticipantsData
-                                              .choosedAnswer
+                                              .choosedAnswer[index]
                                           ]
                                         }
                                       </div>
@@ -991,8 +737,20 @@ const MainLayoutPage = () => {
                                         }
                                       </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
+                              </div>
+                              <div
+                                className="quiz-setting"
+                                style={{
+                                  position: "absolute",
+                                  top: "93%",
+                                  left: "50%",
+                                  fontSize: "20px",
+                                }}
+                              >
+                                {" "}
+                                <span> Here will be a setting for a quiz</span>
                               </div>
                             </div>
                           </div>
@@ -1049,9 +807,9 @@ const MainLayoutPage = () => {
       )}
       <Chat
         userData={userData}
+        quizData={quizData}
         usersData={users}
         id={getUserId}
-        roomData={quizData}
         rooms={rooms}
         participants={participantsArray}
       />

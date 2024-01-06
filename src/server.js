@@ -26,7 +26,6 @@ io.on("connection", (socket) => {
       onlineUsers.push({ userId, socketId: socket.id });
 
     io.emit("getOnlineUsers", onlineUsers);
-    console.log(onlineUsers);
   });
 
   socket.on("disconnect", () => {
@@ -41,7 +40,6 @@ io.on("connection", (socket) => {
   //   if (users) {
   //     io.to(users.socketId).emit("receive_message", message);
   //   }
-  //   console.log(message, users);
   // });
 });
 

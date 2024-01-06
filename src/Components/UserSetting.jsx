@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../DataBase/firebase";
 import EditIconModal from "../Modal/EditIconModal";
+import copy from "clipboard-copy";
+import { message } from "antd";
 
 const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
   // Styles
@@ -34,6 +36,7 @@ const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
   const [userIcon, setUserIcon] = useState(icon);
   const [editName, setEditName] = useState(name);
   const [showInputEditName, setShowInputEditName] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
 
   // for listen the mouse hover
 
@@ -51,9 +54,28 @@ const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
     setIsOpenEditIconModal(false);
   };
 
+  // for copy ID when you have a click
+
+  const handleCopyValue = (valueToCopy) => {
+    copy(valueToCopy)
+      .then(() => {
+        messageApi.open({
+          type: "success",
+          content: "Copy!",
+        });
+      })
+      .catch((error) => {
+        messageApi.open({
+          type: "error",
+          content: error,
+        });
+      });
+  };
+
   // General setting
 
-  const getUserId = localStorage.getItem("userId");
+  const getUserId =
+    localStorage.getItem("userId") || sessionStorage.getItem("userId");
   const userPath = `users/${getUserId}/`;
   const roomPath = `rooms/${roomId}/participants/${getUserId}`;
 
@@ -126,6 +148,7 @@ const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
 
   return (
     <div className={`user-setting-container ${visible ? "show" : ""}`}>
+      {contextHolder}
       <div className="user-setting-content">
         <div className="user-setting-context">
           <div className="user-icon">
@@ -201,7 +224,12 @@ const UserSetting = ({ visible, name, icon, id, roomId, privilege }) => {
             </h4>
           </div>
           <div className="user-id">
-            <h4>Your ID: {id}</h4>
+            <h4 onClick={() => handleCopyValue(id)}>
+              Your ID:{" "}
+              <span style={{ textDecoration: "underline", cursor: "pointer" }}>
+                {id}
+              </span>{" "}
+            </h4>
           </div>
           <div className="logout-button-block">
             <button onClick={logOut} className="logout-button">
