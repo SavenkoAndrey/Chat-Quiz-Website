@@ -13,12 +13,13 @@ import io from "socket.io-client";
 import moment from "moment";
 import DeleteChatModal from "../Modal/DeleteChatModal";
 import InputEmoji from "react-input-emoji";
+import copy from "clipboard-copy";
 
 // implementation socket logic
 
 const socket = io.connect("http://localhost:3001");
 
-const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
+const Chat = ({ userData, usersData, id, quizData, rooms, participants }) => {
   const [theme, setTheme] = useState(localStorage.getItem("theme"));
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [isOpenChat, setIsOpenChat] = useState(false);
@@ -42,8 +43,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
 
   // the fn for find a chat and make active block
   const [activeFriendsBlock, setActiveFriendsBlock] = useState(null);
-  // const [activeGroupBlock, setActiveGroupBlock] = useState(null);
-  const [newMessageLength, setNewMessageLength] = useState(0);
+  // const [newMessageLength, setNewMessageLength] = useState(0);
   // const [isReadMessage, setIsReadMessage] = useState(false);
   const [newRoomData, setNewRoomData] = useState([]);
   const chatData = friends.find((chat) => chat.id === activeFriendsBlock);
@@ -91,7 +91,6 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
       messagesArray.push(friends[i]);
     }
   }
-  // console.log(newMessageLength);
 
   const lastMessages = friends
     .map((friend) => {
@@ -104,11 +103,10 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
       // if (messagesArray.length > newMessageLength) {
       //   // if (!isReadMessage && !isOnline) {
       //   // setNewMessageLength(messagesArray.length);
-      //   console.log(messagesArray.length);
+
       // } else {
       //   // setNewMessageLength(0);
       //   // setIsReadMessage(true)
-      //   console.log(0);
       //   // }
       // }
 
@@ -129,29 +127,11 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
     })
     .filter((message) => message.lastMessage !== null);
 
-  const lastGroupMessages = newRoomData
-    .map((group) => {
-      const messages = group.messages || [];
-      const messagesArray = Object.values(messages);
-      const sortLastMessage = messagesArray.sort((a, b) => {
-        return a.numberMessage - b.numberMessage;
-      });
+  const [lastGroupMessage, setLastGroupMessage] = useState(null);
 
-      const lastMessage =
-        messagesArray.length > 0
-          ? sortLastMessage[sortLastMessage.length - 1]
-          : null;
-
-      return {
-        groupId: group.roomId,
-        lastMessage: lastMessage,
-        groupIcon: group.groupIcon,
-        groupName: group.groupName,
-        // newMessagesCount: newMessageLength,
-        // isReadMessage: isReadMessage,
-      };
-    })
-    .filter((message) => message.lastMessage !== null);
+  const foundGroup = newRoomData.find(
+    (group) => group.roomId === userData.roomId
+  );
 
   // request's state
 
@@ -236,7 +216,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
           } else if (groupChatData) {
             const messageRoomRef = ref(
               db,
-              `rooms/${roomData.id}/messages/` + randomMessageKey
+              `rooms/${userData.roomId}/messages/` + randomMessageKey
             );
             // const isReadMessageRef = ref(
             //   db,
@@ -279,6 +259,30 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
       }
     };
 
+    if (foundGroup) {
+      const messages = foundGroup.messages || [];
+      const messagesArray = Object.values(messages);
+      const sortLastMessage = messagesArray.sort((a, b) => {
+        return a.numberMessage - b.numberMessage;
+      });
+
+      const lastMessage =
+        messagesArray.length > 0
+          ? sortLastMessage[sortLastMessage.length - 1]
+          : null;
+
+      const lastGroupMessage = {
+        groupId: foundGroup.roomId,
+        lastMessage: lastMessage,
+        groupIcon: foundGroup.quizIcon,
+        groupName: foundGroup.quizName,
+      };
+
+      setLastGroupMessage(lastGroupMessage);
+    } else {
+      // Группа с указанным userData.roomId не найдена
+    }
+
     // add online users
 
     if (socket === null) return;
@@ -291,7 +295,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
 
     // socket.on("receive_message", (data) => {
     //   setMessageReceived(data);
-    //   console.log(data);
+
     // });
 
     document.addEventListener("keydown", handleSendMessageButton);
@@ -303,12 +307,13 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
   }, [
     activeFriendsBlock,
     chatData,
+    foundGroup,
     friends,
     groupChatData,
     id,
     message,
     messageApi,
-    roomData,
+    newRoomData,
     userData,
   ]);
 
@@ -326,7 +331,6 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
     //   // if (chatData.id !== res.chatData.id) return;
 
     //   // setMessageReceived((prev) => [...prev, res]);
-    //   console.log(res);
     // });
 
     // get new message and make a key
@@ -346,7 +350,6 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
           }));
           // if (!chatData.isReadMessage) {
           //   const newMessages = newMessagesArray[newMessagesArray.length - 1];
-          //   console.log(newMessages);
           //   setNewMessageLength(newMessagesArray.length);
           // } else {
           //   setNewMessageLength(0);
@@ -364,7 +367,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
         off(messageRef, "value", handleData);
       };
     } else if (groupChatData) {
-      const messageGroupRef = ref(db, `rooms/${roomData.id}/messages`);
+      const messageGroupRef = ref(db, `rooms/${userData.roomId}/messages`);
 
       const handleGroupData = (snapshot) => {
         const messages = snapshot.val();
@@ -386,7 +389,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
         off(messageGroupRef, "value", handleGroupData);
       };
     }
-  }, [chatData, newMessageLength, userData, roomData, groupChatData]);
+  }, [chatData, userData, groupChatData]);
 
   useEffect(() => {
     // click on the keybutton
@@ -417,10 +420,12 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
     const timer = setTimeout(async () => {
       if (findFriend.length > 0) {
         const findFriendNum = +findFriend;
-        const isFoundFriend = usersData.find(
-          (code) => code.invitationCode === findFriendNum
-        );
-        setIsFoundFriend(isFoundFriend);
+        if (findFriendNum !== userData.invitationCode) {
+          const isFoundFriend = usersData.find(
+            (code) => code.invitationCode === findFriendNum
+          );
+          setIsFoundFriend(isFoundFriend);
+        }
       } else {
         setIsFoundFriend(null);
       }
@@ -495,7 +500,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
     id,
     message,
     isOpenChatSetting,
-    roomData,
+    userData.invitationCode,
   ]);
 
   // click on Add a friend
@@ -608,7 +613,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
       } else if (groupChatData) {
         const messageRoomRef = ref(
           db,
-          `rooms/${roomData.id}/messages/` + randomMessageKey
+          `rooms/${userData.roomId}/messages/` + randomMessageKey
         );
         // const isReadMessageRef = ref(
         //   db,
@@ -675,6 +680,24 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
         error,
       });
     }
+  };
+
+  // for copy InvitationID when you have a click
+
+  const handleCopyValue = (valueToCopy) => {
+    copy(valueToCopy)
+      .then(() => {
+        messageApi.open({
+          type: "success",
+          content: "Copy!",
+        });
+      })
+      .catch((error) => {
+        messageApi.open({
+          type: "error",
+          content: error,
+        });
+      });
   };
 
   return (
@@ -778,12 +801,13 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
                   className="invitation-code"
                   style={theme !== "dark" ? { color: "#000" } : {}}
                 >
-                  <h3>
+                  <h3 onClick={() => handleCopyValue(userData.invitationCode)}>
                     Invitation code:
                     <span
                       style={{
                         textDecoration: "underline",
                         color: "#e9f500",
+                        cursor: "pointer",
                       }}
                     >
                       {userData.invitationCode}
@@ -822,7 +846,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
               </div>
               {isFoundFriend ? (
                 <div className="find-friends-container">
-                  <div key={isFoundFriend.id} className="find-friends-block">
+                  <div className="find-friends-block">
                     <img
                       className="friends-icon"
                       src={isFoundFriend.userIcon}
@@ -846,93 +870,90 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
               ) : (
                 ""
               )}
-              {roomData ? (
+              {quizData ? (
                 <>
-                  {lastGroupMessages.map((group) => (
-                    <div
-                      key={group.id}
-                      className={`group-message-block ${
-                        activeFriendsBlock === roomData.id ? "active" : ""
-                      }`}
-                      onClick={() =>
-                        handleBlockClick(roomData.id, roomData.creatorName)
-                      }
-                    >
-                      <div className="chats-message-sender-data">
-                        <div className="chats-message-icon-block">
-                          <img
-                            className="group-icon"
-                            src={group.groupIcon}
-                            alt="groupIcon"
-                          />
-                        </div>
-                        <div className="chats-message-text-block">
-                          <div className="chats-message-data-block">
-                            <span className="sender-nick">
-                              <span
-                                style={{ paddingRight: "15px", color: "#fff" }}
-                                className="material-symbols-outlined"
-                              >
-                                diversity_2
-                              </span>
-                              {group.groupName}
+                  <div
+                    className={`group-message-block ${
+                      activeFriendsBlock === quizData.id ? "active" : ""
+                    }`}
+                    onClick={() =>
+                      handleBlockClick(quizData.id, quizData.creatorName)
+                    }
+                  >
+                    <div className="chats-message-sender-data">
+                      <div className="chats-message-icon-block">
+                        <img
+                          className="group-icon"
+                          src={lastGroupMessage.groupIcon}
+                          alt="groupIcon"
+                        />
+                      </div>
+                      <div className="chats-message-text-block">
+                        <div className="chats-message-data-block">
+                          <span className="sender-nick">
+                            <span
+                              style={{ paddingRight: "15px", color: "#fff" }}
+                              className="material-symbols-outlined"
+                            >
+                              diversity_2
                             </span>
+                            {lastGroupMessage.groupName}
+                          </span>
 
-                            <p>{group.lastMessage.messageTime}</p>
-                          </div>
-                          <div
+                          <p>{lastGroupMessage.lastMessage.messageTime}</p>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <span
                             style={{
-                              display: "flex",
-                              justifyContent: "space-between",
+                              display: "block",
+                              maxWidth: "80%",
+                              fontSize: "20px",
+                              color: "#fff",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                             }}
                           >
-                            <span
-                              style={{
-                                display: "block",
-                                maxWidth: "80%",
-                                fontSize: "20px",
-                                color: "#fff",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              <span>
-                                {group.lastMessage.senderName ===
-                                userData.username
-                                  ? "You: "
-                                  : `${group.lastMessage.senderName}: `}
-                              </span>
-                              {group.lastMessage.message}
+                            <span>
+                              {lastGroupMessage.lastMessage.senderName ===
+                              userData.username
+                                ? "You: "
+                                : `${lastGroupMessage.lastMessage.senderName}: `}
                             </span>
-                            <span
-                              style={
-                                isOnline
-                                  ? {
-                                      fontSize: "15px",
-                                      color: "#bdbdbd8e",
-                                      position: "relative",
-                                      top: "25px",
-                                      height: "50px",
-                                      wordSpacing: "-10px",
-                                    }
-                                  : {
-                                      fontSize: "15px",
-                                      color: "green",
-                                      position: "relative",
-                                      top: "25px",
-                                      height: "50px",
-                                      wordSpacing: "-10px",
-                                    }
-                              }
-                            >
-                              <b>✔ ✔</b>
-                            </span>
-                          </div>
+                            {lastGroupMessage.lastMessage.message}
+                          </span>
+                          <span
+                            style={
+                              isOnline
+                                ? {
+                                    fontSize: "15px",
+                                    color: "#bdbdbd8e",
+                                    position: "relative",
+                                    top: "25px",
+                                    height: "50px",
+                                    wordSpacing: "-10px",
+                                  }
+                                : {
+                                    fontSize: "15px",
+                                    color: "green",
+                                    position: "relative",
+                                    top: "25px",
+                                    height: "50px",
+                                    wordSpacing: "-10px",
+                                  }
+                            }
+                          >
+                            <b>✔ ✔</b>
+                          </span>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </>
               ) : (
                 ""
@@ -1065,7 +1086,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
                     {!groupChatData && activeFriendsBlock
                       ? chatData.friendsName
                       : groupChatData
-                      ? groupChatData.groupName
+                      ? groupChatData.quizName
                       : "You are"}
                   </span>
                   <br />
@@ -1216,7 +1237,7 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
                                   <p
                                     style={{
                                       wordBreak: "break-word",
-                                      width: "90%",
+                                      // width: "90%",
                                     }}
                                   >
                                     {messageData.message}
@@ -1235,11 +1256,13 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
                                     <div
                                       style={{
                                         width: "150px",
+                                        height: "30px",
                                         display: "flex",
                                         justifyContent: "center",
                                         margin: "0 20px 0 0",
                                         position: "relative",
                                         left: "35px",
+                                        top: "10px",
                                       }}
                                     >
                                       <p
@@ -1279,7 +1302,6 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
                                   <p
                                     style={{
                                       wordBreak: "break-word",
-                                      width: "85%",
                                     }}
                                   >
                                     {messageData.message}
@@ -1290,9 +1312,11 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
                                       position: "relative",
                                       justifyContent: "flex-end",
                                       width: "100%",
-                                      height: "20px",
-                                      right: "10px",
+                                      height: "30px",
+
+                                      right: "0px",
                                       margin: "0 1rem 0 0rem",
+                                    
                                     }}
                                   >
                                     <p
@@ -1321,7 +1345,6 @@ const Chat = ({ userData, usersData, id, roomData, rooms, participants }) => {
 
                                         width: "30px",
                                         // position: "relative",
-                                        // left: "10px",
                                       }}
                                     >
                                       ✔ ✔

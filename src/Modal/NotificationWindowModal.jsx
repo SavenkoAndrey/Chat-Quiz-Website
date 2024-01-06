@@ -10,7 +10,6 @@ const NotificationWindowModal = ({
 }) => {
   const [userInteracted, setUserInteracted] = useState(false);
   const noticeSoundRef = useRef(null);
-  console.log(visible);
   useEffect(() => {
     const handleUserInteracted = () => {
       setUserInteracted(true);

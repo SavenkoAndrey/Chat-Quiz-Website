@@ -3,6 +3,7 @@ import { Form, Input, message } from "antd";
 import { ref, set, update } from "firebase/database";
 import React, { useEffect, useState } from "react";
 import { db } from "../DataBase/firebase";
+import CreateQuizModal from "../Modal/CreateQuizModal";
 import SelectedPicturesModal from "../Modal/SelectedPicturesModal";
 import AnswerInput from "./AnswerInput";
 
@@ -11,6 +12,7 @@ const CreateQuiz = ({ visible, users, onClose, userData }) => {
 
   const [addUsers, setAddUsers] = useState("");
   const [participantsArray, setParticipantsArray] = useState([]);
+  const [isCreateQuizModal, setIsCreateQuizModal] = useState(false);
 
   // quiz data
   const [questions, setQuestions] = useState([]);
@@ -74,8 +76,6 @@ const CreateQuiz = ({ visible, users, onClose, userData }) => {
       setQuestionIndex(questionIndex - 1);
     }
   };
-
-  console.log(questions, questionIndex);
 
   // fn for find a user
 
@@ -158,7 +158,6 @@ const CreateQuiz = ({ visible, users, onClose, userData }) => {
       (participant) => participant.id !== participantId
     );
     setParticipantsArray(updatedParticipants);
-    console.log(updatedParticipants);
   };
 
   const requests = participantsArray.map((participant) => ({
@@ -168,7 +167,16 @@ const CreateQuiz = ({ visible, users, onClose, userData }) => {
     },
   }));
 
-  const createQuizRoom = async () => {
+  const handleOk = (data) => {
+    createQuizRoom(data.quizIcon, data.quizName);
+    setIsCreateQuizModal(false);
+  };
+
+  const handleCancel = () => {
+    setIsCreateQuizModal(false);
+  };
+
+  const createQuizRoom = async (quizIcon, quizName) => {
     const randomKey = Math.random().toString(36).substring(2) + Date.now();
     const randomRoomId = Math.random().toString(5).substring(20) + Date.now();
     const randomRoomIdNumber = +randomRoomId;
@@ -204,6 +212,8 @@ const CreateQuiz = ({ visible, users, onClose, userData }) => {
         participants: {},
         requests: Object.assign({}, ...requests),
         roomId: randomRoomIdNumber,
+        quizIcon: quizIcon,
+        quizName: quizName,
       });
 
       await set(userPath, randomRoomIdNumber);
@@ -354,10 +364,18 @@ const CreateQuiz = ({ visible, users, onClose, userData }) => {
                   />
                 </div>
                 <div className="create-quiz-button">
-                  <button onClick={createQuizRoom} id="create-quiz">
+                  <button
+                    onClick={() => setIsCreateQuizModal(true)}
+                    id="create-quiz"
+                  >
                     Create Quiz
                   </button>
                 </div>
+                <CreateQuizModal
+                  visible={isCreateQuizModal}
+                  onOk={handleOk}
+                  onClose={handleCancel}
+                />
               </div>
               <div className="create-quiz-block-right-part">
                 {questionIndex !== questions.length ? (
